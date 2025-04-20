@@ -5,6 +5,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 
+import 'StudentEventDetails.dart';
+
 class StudentHome extends StatefulWidget {
   const StudentHome({Key? key}) : super(key: key);
 
@@ -34,7 +36,7 @@ class _StudentHomeState extends State<StudentHome> {
 
   fetchDataFromFirestore() async {
     QuerySnapshot<Map<String, dynamic>> querySnapshot =
-    await FirebaseFirestore.instance.collection('adminRequests')
+    await FirebaseFirestore.instance.collection('events')
         // .where('permission', isEqualTo: 'approved')
         .get();
     for (QueryDocumentSnapshot<Map<String, dynamic>> doc in querySnapshot.docs) {
@@ -47,6 +49,7 @@ class _StudentHomeState extends State<StudentHome> {
           "eventTitle": eventName,
           "date": date,
           "time": time,
+          "id": doc.id
         });
       } else {
         mySelectedEvents[date] = [
@@ -54,6 +57,7 @@ class _StudentHomeState extends State<StudentHome> {
             "eventTitle": eventName,
             "date": date,
             "time": time,
+            "id": doc.id
           }
         ];
       }
@@ -216,18 +220,14 @@ class _StudentHomeState extends State<StudentHome> {
                 var myEvents = myEventsList[index];
                 return InkWell(
                   onTap: () {
-                    // Navigator.push(
-                    //   context,
-                    //   MaterialPageRoute(
-                    //     builder: (context) => StudentEventDetails(
-                    //       history: 0,
-                    //       programDetails: myEvents['eventTitle'],
-                    //       email: user!.email.toString(),
-                    //       date: myEvents['date'],
-                    //       time: myEvents['time'],
-                    //     ),
-                    //   ),
-                    // );
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => StudentEventDetails(
+                         eventId: myEvents['id'],
+                        ),
+                      ),
+                    );
                   },
                   child: Card(
                     color: Colors.white,

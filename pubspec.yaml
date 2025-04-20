@@ -44,7 +44,8 @@ dependencies:
   table_calendar: ^3.0.9
   intl: ^0.18.0
   fluttertoast: ^8.2.4
-
+  font_awesome_flutter: ^10.7.0
+  qr_flutter: ^4.1.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

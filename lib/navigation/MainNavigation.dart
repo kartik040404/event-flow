@@ -1,6 +1,8 @@
 import 'package:event_flow/EventsScreen.dart';
 import 'package:event_flow/ProfileScreen.dart';
 import 'package:event_flow/faculty/FacultyHome.dart';
+import 'package:event_flow/student/StudentEvent.dart';
+import 'package:event_flow/student/StudentProfile.dart';
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import '../admin/AdminHome.dart';
@@ -23,7 +25,7 @@ class _MainNavigationState extends State<MainNavigation> {
   List<Widget> get _pages {
     switch (widget.role) {
       case UserRole.student:
-        return [StudentHome(), Eventsscreen(), Profilescreen()];
+        return [StudentHome(), StudentEvent(), StudentProfile()];
       case UserRole.faculty:
         return [Facultyhome(), Eventsscreen(), Profilescreen()];
       case UserRole.admin:
