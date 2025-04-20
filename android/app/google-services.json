@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "276049719035",
+    "project_id": "event-flow-2992b",
+    "storage_bucket": "event-flow-2992b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:276049719035:android:6638cdb2dc8959aa90ca5e",
+        "android_client_info": {
+          "package_name": "com.example.event_flow"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAzzlyvrYFjiZ1X0rl4YgbF4MyNukoGzr0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
