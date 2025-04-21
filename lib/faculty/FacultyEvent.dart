@@ -1,8 +1,12 @@
-import 'package:event_flow/student/StudentEventDetails.dart';
+// import 'package:event_flow/student/FacultyEventDetails.dart';
+import 'package:event_flow/faculty/FacultyEventDetailsFilling.dart';
+import 'package:event_flow/faculty/FacultyEventFullDetails.dart';
 import 'package:event_flow/student/StudentParticipated.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
+import 'FacultyEventDetails.dart';
 
 class ProgramDetails {
   final String programDetails;
@@ -53,14 +57,14 @@ enum SortOption {
   titleZA,
 }
 
-class StudentEvent extends StatefulWidget {
+class FacultyEvent extends StatefulWidget {
   @override
-  _StudentEventState createState() => _StudentEventState();
+  _FacultyEventState createState() => _FacultyEventState();
 }
 final FirebaseAuth _auth = FirebaseAuth.instance;
 User? user = _auth.currentUser;
 
-class _StudentEventState extends State<StudentEvent> {
+class _FacultyEventState extends State<FacultyEvent> {
   int _selectedIndex = 0;
   late int faculty;
   late String emailID;
@@ -301,11 +305,11 @@ class _StudentEventState extends State<StudentEvent> {
                 Expanded(
                   child: TabBarView(
                     children: [
-                      // First Tab: StudentEvent
-                      _buildEventsList(fetchProgramDetails()),
+                      // First Tab: FacultyEvent
+                      _buildEventsList1(fetchProgramDetails()),
 
                       // Second Tab: Your Activities
-                      _buildEventsList(fetchUserActivities()),
+                      _buildEventsList2(fetchUserActivities()),
                     ],
                   ),
                 ),
@@ -314,23 +318,23 @@ class _StudentEventState extends State<StudentEvent> {
           ),
         ),
       ),
-      // floatingActionButton: FloatingActionButton.extended(
-      //   onPressed: () => {},
-      //   // onPressed: ()=> Navigator.push(context, MaterialPageRoute(builder: (context) => StudentEventsHistory(),)),
-      //   label: const Text(
-      //     'History',
-      //     style: TextStyle(fontFamily: 'MainFont', color: Colors.white),
-      //   ),
-      //   backgroundColor: Colors.black,
-      //   shape: RoundedRectangleBorder(
-      //     borderRadius: BorderRadius.circular(30),
-      //   ),
-      //   elevation: 4,
-      // ),
+      floatingActionButton: FloatingActionButton.extended(
+        // onPressed: () => {},
+        onPressed: ()=> Navigator.push(context, MaterialPageRoute(builder: (context) =>FacultyEventDetailsFilling(),)),
+        label: const Text(
+          'Add Event',
+          style: TextStyle(fontFamily: 'MainFont', color: Colors.white),
+        ),
+        backgroundColor: Colors.black,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(30),
+        ),
+        elevation: 4,
+      ),
     );
   }
 
-  Widget _buildEventsList(Future<List<ProgramDetails>> futureEvents) {
+  Widget _buildEventsList1(Future<List<ProgramDetails>> futureEvents) {
     return FutureBuilder<List<ProgramDetails>>(
       future: futureEvents,
       builder: (context, snapshot) {
@@ -399,24 +403,193 @@ class _StudentEventState extends State<StudentEvent> {
               child: InkWell(
                 borderRadius: BorderRadius.circular(12),
                 onTap: () {
-                  if (futureEvents == fetchProgramDetails()) {
+                  // if (futureEvents == fetchProgramDetails()) {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => StudentEventDetails(eventId: programDetails.id),
+                        builder: (context) => FacultyEventDetails(eventId: programDetails.id),
                       ),
                     );
-                  } else {
+                  // } else {
+                    // Navigator.push(
+                    //   context,
+                    //   MaterialPageRoute(
+                    //     builder: (context) => StudentParticipated(
+                    //       eventId: programDetails.id,
+                    //       email: user!.email,
+                    //     ),
+                    //   ),
+                    // );
+
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.event_note,
+                              color: Colors.blue[700],
+                              size: 24,
+                            ),
+                          ),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  programDetails.programDetails,
+                                  style: TextStyle(
+                                    fontFamily: "MainFont",
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.calendar_today,
+                                      size: 14,
+                                      color: Colors.grey[700],
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      getDate(programDetails.date),
+                                      style: TextStyle(
+                                        fontFamily: "MainFont1",
+                                        color: Colors.grey[800],
+                                      ),
+                                    ),
+                                    SizedBox(width: 16),
+                                    Icon(
+                                      Icons.access_time,
+                                      size: 14,
+                                      color: Colors.grey[700],
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      programDetails.time,
+                                      style: TextStyle(
+                                        fontFamily: "MainFont1",
+                                        color: Colors.grey[800],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+          itemCount: programList.length,
+        );
+      },
+    );
+  }
+  Widget _buildEventsList2(Future<List<ProgramDetails>> futureEvents) {
+    return FutureBuilder<List<ProgramDetails>>(
+      future: futureEvents,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(
+            child: CircularProgressIndicator(
+              color: Colors.black,
+              strokeWidth: 3,
+            ),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, size: 48, color: Colors.red),
+                SizedBox(height: 16),
+                Text(
+                  'Error loading events',
+                  style: TextStyle(fontFamily: "MainFont", fontSize: 16),
+                ),
+              ],
+            ),
+          );
+        }
+
+        List<ProgramDetails> programList = snapshot.data ?? [];
+
+        if (programList.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.event_busy, size: 64, color: Colors.grey),
+                SizedBox(height: 16),
+                Text(
+                  'No events found',
+                  style: TextStyle(
+                    fontFamily: "MainFont",
+                    fontSize: 18,
+                    color: Colors.grey[700],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // Apply the current sort option
+        _sortPrograms(programList);
+
+        return ListView.builder(
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          itemBuilder: (context, index) {
+            ProgramDetails programDetails = programList[index];
+            return Card(
+              color: Colors.white,
+              margin: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+              elevation: 5,
+              shadowColor: Colors.black,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () {
+                  // if (futureEvents == fetchProgramDetails()) {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => StudentParticipated(
-                          eventId: programDetails.id,
-                          email: user!.email,
-                        ),
+                        builder: (context) => FacultyEventFullDetails(eventId: programDetails.id),
                       ),
                     );
-                  }
+                  // } else {
+                    // Navigator.push(
+                    //   context,
+                    //   MaterialPageRoute(
+                    //     builder: (context) => StudentParticipated(
+                    //       eventId: programDetails.id,
+                    //       email: user!.email,
+                    //     ),
+                    //   ),
+                    // );
+
                 },
                 child: Padding(
                   padding: const EdgeInsets.all(12.0),
@@ -516,22 +689,57 @@ class _StudentEventState extends State<StudentEvent> {
     return date1.year == date2.year && date1.month == date2.month && date1.day == date2.day;
   }
 
+  // Future<List<ProgramDetails>> fetchUserActivities() async {
+  //   try {
+  //     QuerySnapshot userQuery = await FirebaseFirestore.instance
+  //         .collection('events')
+  //         .where('uniqueName', isEqualTo: user?.email)
+  //         .get();
+  //
+  //     if (userQuery.docs.isNotEmpty) {
+  //       DocumentSnapshot userDoc = userQuery.docs.first;
+  //       List<dynamic> activityIds = userDoc['activities'] ?? [];
+  //       List<ProgramDetails> userActivities = await fetchProgramDetailsByIds(activityIds);
+  //       return userActivities;
+  //     } else {
+  //       print('User not found');
+  //       return [];
+  //     }
+  //   } catch (e) {
+  //     print('Error fetching user activities: $e');
+  //     return [];
+  //   }
+  // }
   Future<List<ProgramDetails>> fetchUserActivities() async {
     try {
-      QuerySnapshot userQuery = await FirebaseFirestore.instance
-          .collection('users')
-          .where('email', isEqualTo: user?.email)
-          .get();
-
-      if (userQuery.docs.isNotEmpty) {
-        DocumentSnapshot userDoc = userQuery.docs.first;
-        List<dynamic> activityIds = userDoc['activities'] ?? [];
-        List<ProgramDetails> userActivities = await fetchProgramDetailsByIds(activityIds);
-        return userActivities;
-      } else {
-        print('User not found');
+      final email = user?.email;
+      if (email == null) {
+        print('User email is null');
         return [];
       }
+
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('events')
+          .where('uniqueName', isEqualTo: email)
+          .get();
+
+      if (querySnapshot.docs.isEmpty) {
+        print('No matching documents found');
+        return [];
+      }
+
+      List<ProgramDetails> userActivities = querySnapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+
+        return ProgramDetails(
+          programDetails: data['programDetails'] ?? '',
+          date: data['startDate'] ?? '',
+          time: data['startTime'] ?? '',
+          id: doc.id,
+        );
+      }).toList();
+
+      return userActivities;
     } catch (e) {
       print('Error fetching user activities: $e');
       return [];
@@ -572,7 +780,7 @@ void main() {
           primary: Colors.black,
         ),
       ),
-      home: StudentEvent(),
+      home: FacultyEvent(),
     ),
   );
 }

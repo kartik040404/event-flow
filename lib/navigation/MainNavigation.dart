@@ -1,6 +1,8 @@
 import 'package:event_flow/EventsScreen.dart';
 import 'package:event_flow/ProfileScreen.dart';
+import 'package:event_flow/faculty/FacultyEvent.dart';
 import 'package:event_flow/faculty/FacultyHome.dart';
+import 'package:event_flow/faculty/FacultyProfile.dart';
 import 'package:event_flow/student/StudentEvent.dart';
 import 'package:event_flow/student/StudentProfile.dart';
 import 'package:flutter/material.dart';
@@ -27,7 +29,7 @@ class _MainNavigationState extends State<MainNavigation> {
       case UserRole.student:
         return [StudentHome(), StudentEvent(), StudentProfile()];
       case UserRole.faculty:
-        return [Facultyhome(), Eventsscreen(), Profilescreen()];
+        return [FacultyHome(), FacultyEvent(), FacultyProfile()];
       case UserRole.admin:
         return [AdminHome(), Eventsscreen(), Profilescreen()];
     }
