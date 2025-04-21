@@ -46,6 +46,13 @@ dependencies:
   fluttertoast: ^8.2.4
   font_awesome_flutter: ^10.7.0
   qr_flutter: ^4.1.0
+  barcode: ^2.2.9
+  qr_code_scanner: ^1.0.1
+  excel: ^2.1.0
+  path_provider: ^2.1.0
+  permission_handler: ^10.4.0
+  open_file: ^3.3.2
+  share_plus: ^7.1.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
