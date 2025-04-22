@@ -1,4 +1,5 @@
 import 'package:event_flow/LoginScreen.dart';
+import 'package:event_flow/SaveTextToFileScreen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
@@ -25,6 +26,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
       home: const SplashScreen(),
+      // home: SaveToDownloadScreen(),
       debugShowCheckedModeBanner: false,
     );
   }

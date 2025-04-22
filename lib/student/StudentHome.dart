@@ -37,7 +37,7 @@ class _StudentHomeState extends State<StudentHome> {
   fetchDataFromFirestore() async {
     QuerySnapshot<Map<String, dynamic>> querySnapshot =
     await FirebaseFirestore.instance.collection('events')
-        // .where('permission', isEqualTo: 'approved')
+        .where('permission', isEqualTo: 'approved')
         .get();
     for (QueryDocumentSnapshot<Map<String, dynamic>> doc in querySnapshot.docs) {
       String date = doc['startDate'];

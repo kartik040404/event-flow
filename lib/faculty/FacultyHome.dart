@@ -1,4 +1,5 @@
 
+import 'package:event_flow/faculty/FacultyEventDetails.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -36,7 +37,7 @@ class _FacultyHomeState extends State<FacultyHome> {
   fetchDataFromFirestore() async {
     QuerySnapshot<Map<String, dynamic>> querySnapshot =
     await FirebaseFirestore.instance.collection('events')
-    // .where('permission', isEqualTo: 'approved')
+    .where('permission', isEqualTo: 'approved')
         .get();
     for (QueryDocumentSnapshot<Map<String, dynamic>> doc in querySnapshot.docs) {
       String date = doc['startDate'];
@@ -219,14 +220,14 @@ class _FacultyHomeState extends State<FacultyHome> {
                 var myEvents = myEventsList[index];
                 return InkWell(
                   onTap: () {
-                    // Navigator.push(
-                    //   context,
-                    //   MaterialPageRoute(
-                    //     builder: (context) => StudentEventDetails(
-                    //       eventId: myEvents['id'],
-                    //     ),
-                    //   ),
-                    // );
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => FacultyEventDetails(
+                          eventId: myEvents['id'],
+                        ),
+                      ),
+                    );
                   },
                   child: Card(
                     color: Colors.white,

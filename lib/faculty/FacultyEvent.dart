@@ -35,7 +35,7 @@ Future<List<ProgramDetails>> fetchProgramDetails() async {
   try {
     QuerySnapshot querySnapshot =
     await FirebaseFirestore.instance.collection('events')
-    // .where('permission', isEqualTo: 'approved')
+    .where('permission', isEqualTo: 'approved')
         .get();
 
     List<ProgramDetails> programList = querySnapshot.docs

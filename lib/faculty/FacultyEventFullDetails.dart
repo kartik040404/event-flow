@@ -1,8 +1,14 @@
+import 'dart:io';
+
+import 'package:excel/excel.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
+import 'package:share_plus/share_plus.dart';
 
 class FacultyEventFullDetails extends StatefulWidget {
   final String eventId;
@@ -42,11 +48,11 @@ class _FacultyEventFullDetailsState extends State<FacultyEventFullDetails> {
           // Set status color
           if (permissionStatus == 'pending') {
             statusColor = Colors.orange;
-          } else if (permissionStatus == 'accepted') {
+          } else if (permissionStatus == 'approved') {
             statusColor = Colors.green;
           } else if (permissionStatus == 'rejected') {
             statusColor = Colors.red;
-          }
+          } 
         });
       } else {
         showToast('Event not found');
@@ -271,7 +277,7 @@ class _FacultyEventFullDetailsState extends State<FacultyEventFullDetails> {
 
             // Action Buttons
             SizedBox(height: 20),
-            buildActionButtons(),
+            permissionStatus=="approved"?buildActionButtons():SizedBox()
           ],
         ),
       ),
@@ -281,8 +287,7 @@ class _FacultyEventFullDetailsState extends State<FacultyEventFullDetails> {
   Widget buildActionButtons() {
     return Column(
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        Column(
           children: [
             ElevatedButton.icon(
               onPressed: navigateToQRScannerScreen,
@@ -294,6 +299,7 @@ class _FacultyEventFullDetailsState extends State<FacultyEventFullDetails> {
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               ),
             ),
+            eventData?['feedback'] == 1? SizedBox(height:10,):SizedBox(height: 0,),
 
             if (eventData?['feedback'] == 1)
               ElevatedButton.icon(
@@ -588,12 +594,14 @@ class EventReportScreen extends StatefulWidget {
 class _EventReportScreenState extends State<EventReportScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   bool isLoading = true;
+  bool isExporting = false;
   List<Map<String, dynamic>> attendanceData = [];
   Map<String, List<String>> departmentMap = {};
   String currentView = 'departments';
   String selectedDepartment = '';
   String selectedClass = '';
   String selectedDivision = '';
+  String eventName = ''; // Add this to store event name
 
   @override
   void initState() {
@@ -618,6 +626,11 @@ class _EventReportScreenState extends State<EventReportScreen> {
       }
 
       Map<String, dynamic> eventData = eventDoc.data() as Map<String, dynamic>;
+
+      // Store event name for the report
+      setState(() {
+        eventName = eventData['programDetails'] ?? 'Event';
+      });
 
       // Determine which array to use based on feedback requirement
       String arrayField = eventData['feedback'] == 1 ? 'finalAttendance' : 'attendance';
@@ -720,6 +733,232 @@ class _EventReportScreenState extends State<EventReportScreen> {
     }
   }
 
+  // Export attendance data to Excel
+  Future<void> exportToExcel() async {
+    if (attendanceData.isEmpty) {
+      showToast('No data to export');
+      return;
+    }
+
+    setState(() {
+      isExporting = true;
+    });
+
+    try {
+      // Request storage permission with better error handling
+      // if (Platform.isAndroid) {
+      //   var status = await Permission.storage.status;
+      //   if (!status.isGranted) {
+      //     status = await Permission.storage.request();
+      //     if (!status.isGranted) {
+      //       showToast('Storage permission required to export report');
+      //       // Show dialog to guide user to app settings
+      //       // showPermissionDialog();
+      //       setState(() {
+      //         isExporting = false;
+      //       });
+      //       return;
+      //     }
+      //   }
+      // } else if (Platform.isIOS) {
+      //   // iOS doesn't need explicit permission for saving to documents directory
+      // }
+      //
+
+      // Create a new Excel document
+      final excel = Excel.createExcel();
+
+      // Remove the default sheet
+      excel.delete('Sheet1');
+
+      // Create a summary sheet
+      final Sheet summarySheet = excel['Summary'];
+
+      // Add title and header to summary sheet
+      int rowIndex = 0;
+
+      // Title row
+      var titleCell = summarySheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex));
+      titleCell.value = TextCellValue('Event Attendance Report: $eventName');
+      titleCell.cellStyle = CellStyle(
+        bold: true,
+        fontSize: 14,
+      );
+      rowIndex += 2;
+
+      // Date row
+      var dateCell = summarySheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex));
+      dateCell.value = TextCellValue('Generated on: ${DateTime.now().toString().split('.')[0]}');
+      rowIndex += 2;
+
+      // Total attendees row
+      var totalCell = summarySheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex));
+      totalCell.value = TextCellValue('Total Attendees: ${attendanceData.length}');
+      totalCell.cellStyle = CellStyle(bold: true);
+      rowIndex += 2;
+
+      // Department summary header
+      var deptHeaderCell = summarySheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex));
+      deptHeaderCell.value = TextCellValue('Department');
+      deptHeaderCell.cellStyle = CellStyle(bold: true,             backgroundColorHex:  ExcelColor.fromHexString("FFCCCCCC")
+      );
+
+      var countHeaderCell = summarySheet.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIndex));
+      countHeaderCell.value = TextCellValue('Count');
+      countHeaderCell.cellStyle = CellStyle(bold: true,             backgroundColorHex:  ExcelColor.fromHexString("FFCCCCCC")
+      );
+      rowIndex++;
+
+      // Get departments and counts
+      Map<String, int> departmentCounts = {};
+      for (var user in attendanceData) {
+        String dept = user['department'];
+        departmentCounts[dept] = (departmentCounts[dept] ?? 0) + 1;
+      }
+
+      // Add department counts to summary
+      departmentCounts.forEach((dept, count) {
+        var deptCell = summarySheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex));
+        deptCell.value = TextCellValue(dept);
+
+        var countCell = summarySheet.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIndex));
+        countCell.value = TextCellValue(count.toString());
+
+        rowIndex++;
+      });
+
+      // Create detailed sheet with all attendees
+      final Sheet detailSheet = excel['All Attendees'];
+
+      // Add header row
+      List<String> headers = ['Name', 'Email', 'Department', 'Class', 'Division', 'Roll Number'];
+      for (int i = 0; i < headers.length; i++) {
+        var cell = detailSheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
+        cell.value = TextCellValue(headers[i]);
+        cell.cellStyle = CellStyle(
+          bold: true,
+            backgroundColorHex:  ExcelColor.fromHexString("FFCCCCCC")
+
+        );
+      }
+
+      // Add data rows
+      for (int i = 0; i < attendanceData.length; i++) {
+        var student = attendanceData[i];
+        detailSheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: i + 1))
+            .value = TextCellValue(student['name']);
+        detailSheet.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: i + 1))
+            .value = TextCellValue(student['email']);
+        detailSheet.cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: i + 1))
+            .value = TextCellValue(student['department']);
+        detailSheet.cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: i + 1))
+            .value = TextCellValue(student['class']);
+        detailSheet.cell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: i + 1))
+            .value = TextCellValue(student['division']);
+        detailSheet.cell(CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: i + 1))
+            .value = TextCellValue(student['rollNumber'].toString());
+      }
+
+      // Auto-size columns for better readability
+      for (int i = 0; i < headers.length; i++) {
+        detailSheet.setColumnWidth(i, 15.0);
+      }
+
+      // Create department-wise sheets
+      for (String department in getDepartments()) {
+        // Skip creating sheets for unknown or error departments
+        if (department == 'Unknown' || department == 'Error') continue;
+
+        // Create sheet for this department
+        final Sheet deptSheet = excel[department];
+
+        // Add header row with the same headers
+        for (int i = 0; i < headers.length; i++) {
+          var cell = deptSheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
+          cell.value = TextCellValue(headers[i]);
+          cell.cellStyle = CellStyle(
+            bold: true,
+            backgroundColorHex:  ExcelColor.fromHexString("FFCCCCCC")
+
+    );
+        }
+
+        // Filter students by department
+        List<Map<String, dynamic>> deptStudents = attendanceData
+            .where((user) => user['department'] == department)
+            .toList();
+
+        // Sort by class, then division, then roll number
+        deptStudents.sort((a, b) {
+          int classComp = a['class'].compareTo(b['class']);
+          if (classComp != 0) return classComp;
+
+          int divComp = a['division'].compareTo(b['division']);
+          if (divComp != 0) return divComp;
+
+          if (a['rollNumber'] == 'Unknown' || a['rollNumber'] == 'Error') return 1;
+          if (b['rollNumber'] == 'Unknown' || b['rollNumber'] == 'Error') return -1;
+
+          return a['rollNumber'].toString().compareTo(b['rollNumber'].toString());
+        });
+
+        // Add students to this sheet
+        for (int i = 0; i < deptStudents.length; i++) {
+          var student = deptStudents[i];
+          deptSheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: i + 1))
+              .value = TextCellValue(student['name']);
+          deptSheet.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: i + 1))
+              .value = TextCellValue(student['email']);
+          deptSheet.cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: i + 1))
+              .value = TextCellValue(student['department']);
+          deptSheet.cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: i + 1))
+              .value = TextCellValue(student['class']);
+          deptSheet.cell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: i + 1))
+              .value = TextCellValue(student['division']);
+          deptSheet.cell(CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: i + 1))
+              .value = TextCellValue(student['rollNumber'].toString());
+        }
+
+        // Auto-size columns
+        for (int i = 0; i < headers.length; i++) {
+          deptSheet.setColumnWidth(i, 15.0);
+        }
+      }
+
+      // Get the document directory
+      final directory = await getApplicationDocumentsDirectory();
+      final String fileName = 'attendance_report_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+      final String path = '${directory.path}/$fileName';
+
+      // Save the Excel file
+      final fileBytes = excel.save();
+      if (fileBytes != null) {
+        File excelFile = File(path)
+          ..createSync(recursive: true)
+          ..writeAsBytesSync(fileBytes);
+
+        print('================================Excel file saved at: $path');
+
+        // Share the file
+        await Share.shareXFiles(
+          [XFile(path)],
+          text: 'Attendance Report for $eventName',
+        );
+
+        showToast('Excel report generated and ready to share');
+      } else {
+        showToast('Failed to generate Excel file');
+      }
+    } catch (e) {
+      print('Error exporting to Excel: $e');
+      showToast('Failed to export data: ${e.toString()}');
+    } finally {
+      setState(() {
+        isExporting = false;
+      });
+    }
+  }
+
   void showToast(String message) {
     print(message); // Also log to console for debugging
     Fluttertoast.showToast(
@@ -805,6 +1044,12 @@ class _EventReportScreenState extends State<EventReportScreen> {
                 });
               },
             ),
+          if (!isLoading && attendanceData.isNotEmpty)
+            IconButton(
+              icon: Icon(Icons.file_download),
+              tooltip: 'Export to Excel',
+              onPressed: isExporting ? null : exportToExcel,
+            ),
           // Debug button to show raw data
           IconButton(
             icon: Icon(Icons.info_outline),
@@ -861,7 +1106,52 @@ class _EventReportScreenState extends State<EventReportScreen> {
           ],
         ),
       )
-          : _buildCurrentView(),
+          : Column(
+        children: [
+          // Export button at the top of the screen
+          if (!isLoading && attendanceData.isNotEmpty)
+            Padding(
+              padding: EdgeInsets.all(16),
+              child: ElevatedButton.icon(
+                onPressed: isExporting ? null : exportToExcel,
+                icon: Icon(Icons.file_download),
+                label: Text('Export Attendance Report'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  minimumSize: Size(double.infinity, 50),
+                ),
+              ),
+            ),
+          // Current view
+          Expanded(
+            child: _buildCurrentView(),
+          ),
+        ],
+      ),
+
+        // Loading overlay for export process
+    //     if (isExporting)
+    // Container(
+    //   color: Colors.black45,
+    //   child: Center(
+    //     child: Column(
+    //       mainAxisSize: MainAxisSize.min,
+    //       children: [
+    //         CircularProgressIndicator(),
+    //         SizedBox(height: 16),
+    //         Text(
+    //           'Generating Excel report...',
+    //           style: TextStyle(
+    //             color: Colors.white,
+    //             fontSize: 16,
+    //             fontWeight: FontWeight.bold,
+    //           ),
+    //         ),
+    //       ],
+    //     ),
+    //   ),
+
     );
   }
 
@@ -1117,6 +1407,32 @@ class _EventReportScreenState extends State<EventReportScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  void showPermissionDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: Text('Storage Permission Required'),
+        content: Text(
+          'This app needs storage permission to save the attendance report. '
+              'Please grant storage permission in app settings.',
+        ),
+        actions: [
+          TextButton(
+            child: Text('Cancel'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          TextButton(
+            child: Text('Open Settings'),
+            onPressed: () {
+              Navigator.of(context).pop();
+              openAppSettings();
+            },
+          ),
+        ],
+      ),
     );
   }
 }
