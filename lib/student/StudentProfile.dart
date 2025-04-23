@@ -2,26 +2,54 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:event_flow/LoginScreen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_nav_bar/google_nav_bar.dart';
 
-//This is an addition type of the magnet
 class StudentProfile extends StatefulWidget {
-
   @override
   State<StudentProfile> createState() => _StudentProfileState();
 }
 
-class _StudentProfileState extends State<StudentProfile> {
+class _StudentProfileState extends State<StudentProfile> with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
-  bool textfields=false;
-  TextEditingController nameController=TextEditingController();
-  TextEditingController departmentController=TextEditingController();
-  String emailID='';
-String name='Name',department='Department',email='Email',prnNo='PRN Number',Class='Class',sem='Semester',div='Division',rollNo='Roll Number';
+  bool isLoading = true;
+  String emailID = '';
+  String name = 'Name';
+  String department = 'Department';
+  String email = 'Email';
+  String prnNo = 'PRN Number';
+  String Class = 'Class';
+  String sem = 'Semester';
+  String div = 'Division';
+  String rollNo = 'Roll Number';
+
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeIn,
+      ),
+    );
+    fetchDetails();
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
   Future<void> logout() async {
     try {
       await FirebaseAuth.instance.signOut();
@@ -36,471 +64,342 @@ String name='Name',department='Department',email='Email',prnNo='PRN Number',Clas
     }
   }
 
-  void initState(){
-    super.initState();
-  fetchDetails();
+  Future<void> fetchDetails() async {
+    try {
+      setState(() {
+        isLoading = true;
+      });
 
+      // Get current user's email
+      final User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        throw Exception("User not logged in");
+      }
+
+      emailID = currentUser.email ?? '';
+
+      // Get user data
+      DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(emailID)
+          .get();
+
+      if (!documentSnapshot.exists) {
+        throw Exception("User document not found");
+      }
+
+      // Extract data
+      final data = documentSnapshot.data() as Map<String, dynamic>;
+      name = data['name'] ?? 'Name';
+      department = data['department'] ?? 'Department';
+      email = data['email'] ?? 'Email';
+      prnNo = data['PRN'] ?? 'PRN Number';
+      Class = data['class'] ?? 'Class';
+      sem = data['semester'] ?? 'Semester';
+      div = data['division'] ?? 'Division';
+      rollNo = data['rollNumber'] ?? 'Roll Number';
+
+      setState(() {
+        isLoading = false;
+      });
+    } catch (e) {
+      print("Error fetching student details: $e");
+      setState(() {
+        isLoading = false;
+      });
+      Fluttertoast.showToast(msg: "Failed to load profile data");
+    }
   }
-  Future<void> fetchDetails()async{
-    try{
-      emailID=FirebaseAuth.instance.currentUser!.email!;
 
-    DocumentSnapshot documentSnapshot=await FirebaseFirestore.instance.collection('users').doc(emailID).get();
-    name=documentSnapshot.get('name');
-    department=documentSnapshot.get('department');
-    email=documentSnapshot.get('email');
-    prnNo=documentSnapshot.get('PRN');
-    Class=documentSnapshot.get('class');
-    sem=documentSnapshot.get('semester');
-    div=documentSnapshot.get('division');
-    rollNo=documentSnapshot.get('rollNumber');
-    setState(() {
-
-    });
-    }
-    catch(e){
-      print(e);
-    }
+  Widget _buildProfileField({
+    required String label,
+    required String value,
+    required IconData icon,
+    Color? iconColor,
+    Color? bgColor,
+  }) {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 12, bottom: 6),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontFamily: 'MainFont',
+                color: Colors.grey[700],
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: bgColor ?? Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: (iconColor ?? Colors.blue[700])!.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: iconColor ?? Colors.blue[700],
+                    size: 22,
+                  ),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    value,
+                    style: TextStyle(
+                      fontFamily: 'MainFont1',
+                      fontSize: 16,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    // Define a list of color combinations for profile fields
+    final List<Map<String, Color>> colorSchemes = [
+      {'icon': Colors.blue[700]!, 'bg': Colors.white},
+      {'icon': Colors.teal[600]!, 'bg': Colors.white},
+      {'icon': Colors.indigo[600]!, 'bg': Colors.white},
+      {'icon': Colors.amber[700]!, 'bg': Colors.white},
+      {'icon': Colors.deepPurple[600]!, 'bg': Colors.white},
+      {'icon': Colors.red[600]!, 'bg': Colors.white},
+      {'icon': Colors.green[600]!, 'bg': Colors.white},
+      {'icon': Colors.orange[600]!, 'bg': Colors.white},
+    ];
+
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Container(
-            //   margin: EdgeInsets.only(top: 30,left: 280),
-            //   child: IconButton(
-            //     icon: Icon(Icons.logout_outlined,
-            //       size: 50,),
-            //     onPressed: (){
-            //       logout();
-            //     },
-            //   ),
-            // ),
-            // Container(
-            //   margin: EdgeInsets.only(top: 200),
-            //   child: Text("StudentProfile",style: TextStyle(fontFamily: "MainFont",fontSize: 20),),
-            // )
-            Padding(
-              padding: const EdgeInsets.only(top: 30,left: 20,right: 20),
-              child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: isLoading
+          ? Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Colors.blue[700]!),
+        ),
+      )
+          : Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.blue[50]!, Colors.white],
+          ),
+        ),
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 50.0,
+                floating: false,
+                pinned: true,
+                backgroundColor: Colors.blue[700],
+                flexibleSpace: FlexibleSpaceBar(
+                  title: Text(
+                    'Profile',
+                    style: TextStyle(
+                      fontFamily: 'MainFont',
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  titlePadding: EdgeInsets.only(left: 16, bottom: 16),
+                  centerTitle: false,
+                  background: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Colors.blue[800]!, Colors.blue[500]!],
+                      ),
+                    ),
+                    child: Stack(
+                      children: [
+                        Positioned(
+                          right: -50,
+                          top: -20,
+                          child: Container(
+                            height: 150,
+                            width: 150,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          left: -30,
+                          bottom: -30,
+                          child: Container(
+                            height: 100,
+                            width: 100,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                actions: [
+                  Container(
+                    margin: EdgeInsets.only(right: 10),
+                    child: IconButton(
+                      icon: Icon(Icons.logout, color: Colors.white),
+                      iconSize: 28,
+                      onPressed: logout,
+                    ),
+                  ),
+                ],
+              ),
+              SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Profile",style: TextStyle(fontFamily: 'MainFont',fontSize: 40),),
-                     IconButton(icon: Icon(Icons.logout),iconSize: 40,onPressed:  logout)
+                    Center(
+                      child: Container(
+                        margin: EdgeInsets.only(top: 20),
+                        padding: EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                          border: Border.all(
+                            color: Colors.blue[700]!,
+                            width: 3,
+                          ),
+                        ),
+                        child: ClipOval(
+                          child: Container(
+                            height: 120,
+                            width: 120,
+                            child: Image.asset(
+                              'assets/images/profile.png',
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 12.0, bottom: 24.0),
+                        child: Text(
+                          name,
+                          style: TextStyle(
+                            fontFamily: 'MainFont',
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue[800],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Display fields with different color schemes
+                    _buildProfileField(
+                      label: "Email",
+                      value: email,
+                      icon: Icons.email_outlined,
+                      iconColor: colorSchemes[0]['icon'],
+                      bgColor: colorSchemes[0]['bg'],
+                    ),
+                    _buildProfileField(
+                      label: "Department",
+                      value: department,
+                      icon: Icons.business,
+                      iconColor: colorSchemes[1]['icon'],
+                      bgColor: colorSchemes[1]['bg'],
+                    ),
+                    _buildProfileField(
+                      label: "PRN Number",
+                      value: prnNo,
+                      icon: Icons.assignment_ind_outlined,
+                      iconColor: colorSchemes[2]['icon'],
+                      bgColor: colorSchemes[2]['bg'],
+                    ),
+                    _buildProfileField(
+                      label: "Class",
+                      value: Class,
+                      icon: Icons.class_outlined,
+                      iconColor: colorSchemes[3]['icon'],
+                      bgColor: colorSchemes[3]['bg'],
+                    ),
+                    _buildProfileField(
+                      label: "Semester",
+                      value: sem,
+                      icon: Icons.calendar_today_outlined,
+                      iconColor: colorSchemes[4]['icon'],
+                      bgColor: colorSchemes[4]['bg'],
+                    ),
+                    _buildProfileField(
+                      label: "Division",
+                      value: div,
+                      icon: Icons.people_outline,
+                      iconColor: colorSchemes[5]['icon'],
+                      bgColor: colorSchemes[5]['bg'],
+                    ),
+                    _buildProfileField(
+                      label: "Roll Number",
+                      value: rollNo,
+                      icon: Icons.format_list_numbered_outlined,
+                      iconColor: colorSchemes[6]['icon'],
+                      bgColor: colorSchemes[6]['bg'],
+                    ),
+
+                    // Add a decorative element at the bottom
+                    Center(
+                      child: Container(
+                        margin: EdgeInsets.symmetric(vertical: 32),
+                        height: 5,
+                        width: 100,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Colors.blue[300]!, Colors.blue[700]!],
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
-            ),
-            Center(
-              child: Container(
-                margin: EdgeInsets.only(top: 30),
-                height: 100,
-                width: 100,
-                child: Image.asset('assets/images/profile.png'),
               ),
-            ),
-
-//---------------------------------------------------------------------Name-----------------------------------------------
-            Row(
-              children: [
-                Container(
-                  margin: EdgeInsets.only(left: 10,top: 20),
-                  child: Text("Name",style: TextStyle(fontSize: 15,fontFamily: 'MainFont'),),
-                ),
-                // Container(
-                //   // decoration: BoxDecoration(
-                //   //   borderRadius: BorderRadius.circular(10),
-                //   //   border: Border.all(color: Colors.black,width: 2)
-                //   // ),
-                //   margin: EdgeInsets.only(left: 260,top: 20),
-                //   child: Icon(Icons.edit,color: Colors.black,),
-                // )
-              ],
-            ),
-            Container(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: TextField(
-                  enabled: textfields,
-                  decoration: InputDecoration(
-                    hintText: name,
-                    hintStyle: TextStyle(color: Colors.black,fontFamily: 'MainFont1'),
-                    prefixIcon: Icon(Icons.account_circle_outlined,color: Colors.black,),
-                    disabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15),
-                        borderSide: BorderSide(color: Colors.black)),
-                    focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.black, width: 2),
-                        borderRadius: BorderRadius.circular(15)),
-                    enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.black, width: 2),
-                        borderRadius: BorderRadius.circular(15)),
-
-                  ),
-                ),
-              ),
-            ),
-
-
-//---------------------------------------------------------------------Department-----------------------------------------------
-
-            Row(
-              children: [
-                Container(
-                  margin: EdgeInsets.only(left: 10,top: 10),
-                  child: Text("Department",style: TextStyle(fontSize: 15,fontFamily: 'MainFont'),),
-                ),
-                // Container(
-                //   // decoration: BoxDecoration(
-                //   //   borderRadius: BorderRadius.circular(10),
-                //   //   border: Border.all(color: Colors.black,width: 2)
-                //   // ),
-                //   margin: EdgeInsets.only(left: 210,top: 20),
-                //   child: Icon(Icons.edit,color: Colors.black,),
-                // )
-              ],
-            ),
-            Container(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: TextField(
-                  enabled: textfields,
-                  decoration: InputDecoration(
-                    hintText: department,
-                    hintStyle: TextStyle(color: Colors.black,fontFamily: 'MainFont1'),
-                    prefixIcon: Container(
-                      margin: EdgeInsets.only(top: 10, left: 14),
-                      child: FaIcon(FontAwesomeIcons.building,color: Colors.black,),
-                    ),
-                    disabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15),
-                        borderSide: BorderSide(color: Colors.black)),
-                    focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.black, width: 2),
-                        borderRadius: BorderRadius.circular(15)),
-                    enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.black, width: 2),
-                        borderRadius: BorderRadius.circular(15)),
-
-                  ),
-                ),
-              ),
-            ),
-
-
-//---------------------------------------------------------------------Email-----------------------------------------------
-            Container(
-              margin: EdgeInsets.only(left: 10, top: 10),
-              child: Text(
-                "Email",
-                style: TextStyle(fontSize: 15, fontFamily: 'MainFont'),
-              ),
-            ),
-            Container(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: TextField(
-                  enabled: false,
-                  decoration: InputDecoration(
-                    hintText: email,
-                    hintStyle: TextStyle(color: Colors.black,fontFamily: 'MainFont1'),
-                    prefixIcon: Icon(Icons.email_outlined,color: Colors.black,),
-                    disabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15),
-                        borderSide: BorderSide(color: Colors.black)),
-                    focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.black, width: 2),
-                        borderRadius: BorderRadius.circular(15)),
-                    enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.black, width: 2),
-                        borderRadius: BorderRadius.circular(15)),
-                  ),
-                ),
-              ),
-            ),
-
-//---------------------------------------------------------------------PRN Number-----------------------------------------------
-            Row(
-              children: [
-                Container(
-                  margin: EdgeInsets.only(left: 10,top: 10),
-                  child: Text("PRN Number",style: TextStyle(fontSize: 15,fontFamily: 'MainFont'),),
-                ),
-                // Container(
-                //   // decoration: BoxDecoration(
-                //   //   borderRadius: BorderRadius.circular(10),
-                //   //   border: Border.all(color: Colors.black,width: 2)
-                //   // ),
-                //   margin: EdgeInsets.only(left: 210,top: 20),
-                //   child: Icon(Icons.edit,color: Colors.black,),
-                // )
-              ],
-            ),
-            Container(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: TextField(
-                  enabled: textfields,
-                  decoration: InputDecoration(
-                    hintText: prnNo,
-                    hintStyle: TextStyle(color: Colors.black,fontFamily: 'MainFont1'),
-                    prefixIcon: Container(
-                      margin: EdgeInsets.only(top: 10, left: 14),
-                      child: FaIcon(FontAwesomeIcons.building,color: Colors.black,),
-                    ),
-                    disabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15),
-                        borderSide: BorderSide(color: Colors.black)),
-                    focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.black, width: 2),
-                        borderRadius: BorderRadius.circular(15)),
-                    enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.black, width: 2),
-                        borderRadius: BorderRadius.circular(15)),
-
-                  ),
-                ),
-              ),
-            ),
-
-//---------------------------------------------------------------------Class-----------------------------------------------
-            Row(
-              children: [
-                Container(
-                  margin: EdgeInsets.only(left: 10,top: 10),
-                  child: Text("Class",style: TextStyle(fontSize: 15,fontFamily: 'MainFont'),),
-                ),
-                // Container(
-                //   // decoration: BoxDecoration(
-                //   //   borderRadius: BorderRadius.circular(10),
-                //   //   border: Border.all(color: Colors.black,width: 2)
-                //   // ),
-                //   margin: EdgeInsets.only(left: 210,top: 20),
-                //   child: Icon(Icons.edit,color: Colors.black,),
-                // )
-              ],
-            ),
-            Container(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: TextField(
-                  enabled: textfields,
-                  decoration: InputDecoration(
-                    hintText: Class,
-                    hintStyle: TextStyle(color: Colors.black,fontFamily: 'MainFont1'),
-                    prefixIcon: Container(
-                      margin: EdgeInsets.only(top: 10, left: 14),
-                      child: FaIcon(FontAwesomeIcons.building,color: Colors.black,),
-                    ),
-                    disabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15),
-                        borderSide: BorderSide(color: Colors.black)),
-                    focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.black, width: 2),
-                        borderRadius: BorderRadius.circular(15)),
-                    enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.black, width: 2),
-                        borderRadius: BorderRadius.circular(15)),
-
-                  ),
-                ),
-              ),
-            ),
-
-//---------------------------------------------------------------------Semester-----------------------------------------------
-            Row(
-              children: [
-                Container(
-                  margin: EdgeInsets.only(left: 10,top: 10),
-                  child: Text("Semester",style: TextStyle(fontSize: 15,fontFamily: 'MainFont'),),
-                ),
-                // Container(
-                //   // decoration: BoxDecoration(
-                //   //   borderRadius: BorderRadius.circular(10),
-                //   //   border: Border.all(color: Colors.black,width: 2)
-                //   // ),
-                //   margin: EdgeInsets.only(left: 210,top: 20),
-                //   child: Icon(Icons.edit,color: Colors.black,),
-                // )
-              ],
-            ),
-            Container(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: TextField(
-                  enabled: textfields,
-                  decoration: InputDecoration(
-                    hintText: sem,
-                    hintStyle: TextStyle(color: Colors.black,fontFamily: 'MainFont1'),
-                    prefixIcon: Container(
-                      margin: EdgeInsets.only(top: 10, left: 14),
-                      child: FaIcon(FontAwesomeIcons.building,color: Colors.black,),
-                    ),
-                    disabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15),
-                        borderSide: BorderSide(color: Colors.black)),
-                    focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.black, width: 2),
-                        borderRadius: BorderRadius.circular(15)),
-                    enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.black, width: 2),
-                        borderRadius: BorderRadius.circular(15)),
-
-                  ),
-                ),
-              ),
-            ),
-
-//---------------------------------------------------------------------Division-----------------------------------------------
-            Row(
-              children: [
-                Container(
-                  margin: EdgeInsets.only(left: 10,top: 10),
-                  child: Text("Division",style: TextStyle(fontSize: 15,fontFamily: 'MainFont'),),
-                ),
-                // Container(
-                //   // decoration: BoxDecoration(
-                //   //   borderRadius: BorderRadius.circular(10),
-                //   //   border: Border.all(color: Colors.black,width: 2)
-                //   // ),
-                //   margin: EdgeInsets.only(left: 210,top: 20),
-                //   child: Icon(Icons.edit,color: Colors.black,),
-                // )
-              ],
-            ),
-            Container(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: TextField(
-                  enabled: textfields,
-                  decoration: InputDecoration(
-                    hintText: div,
-                    hintStyle: TextStyle(color: Colors.black,fontFamily: 'MainFont1'),
-                    prefixIcon: Container(
-                      margin: EdgeInsets.only(top: 10, left: 14),
-                      child: FaIcon(FontAwesomeIcons.building,color: Colors.black,),
-                    ),
-                    disabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15),
-                        borderSide: BorderSide(color: Colors.black)),
-                    focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.black, width: 2),
-                        borderRadius: BorderRadius.circular(15)),
-                    enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.black, width: 2),
-                        borderRadius: BorderRadius.circular(15)),
-
-                  ),
-                ),
-              ),
-            ),
-
-
-//---------------------------------------------------------------------Roll Number-----------------------------------------------
-            Row(
-              children: [
-                Container(
-                  margin: EdgeInsets.only(left: 10,top: 10),
-                  child: Text("Roll Number",style: TextStyle(fontSize: 15,fontFamily: 'MainFont'),),
-                ),
-                // Container(
-                //   // decoration: BoxDecoration(
-                //   //   borderRadius: BorderRadius.circular(10),
-                //   //   border: Border.all(color: Colors.black,width: 2)
-                //   // ),
-                //   margin: EdgeInsets.only(left: 210,top: 20),
-                //   child: Icon(Icons.edit,color: Colors.black,),
-                // )
-              ],
-            ),
-            Container(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: TextField(
-                  enabled: textfields,
-                  decoration: InputDecoration(
-                    hintText: rollNo,
-                    hintStyle: TextStyle(color: Colors.black,fontFamily: 'MainFont1'),
-                    prefixIcon: Container(
-                      margin: EdgeInsets.only(top: 10, left: 14),
-                      child: FaIcon(FontAwesomeIcons.building,color: Colors.black,),
-                    ),
-                    disabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15),
-                        borderSide: BorderSide(color: Colors.black)),
-                    focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.black, width: 2),
-                        borderRadius: BorderRadius.circular(15)),
-                    enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.black, width: 2),
-                        borderRadius: BorderRadius.circular(15)),
-
-                  ),
-                ),
-              ),
-            ),
-
-//---------------------------------------------------------------------Logout-----------------------------------------------
-//             Center(
-//               child: Padding(
-//                 padding: const EdgeInsets.only(left: 8.0,right: 8.0),
-//                 child: Container(
-//                   width: 150,
-//                   margin: EdgeInsets.only(top: 40,bottom: 20),
-//                   child: ElevatedButton(
-//                     child: Text(
-//                       textfields?"Save":
-//                       "Edit Profile",
-//                       style: TextStyle(color: Colors.white, fontFamily: 'MainFont'),
-//                     ),
-//                     onPressed: (){
-//                       if(textfields) {
-//                         if(nameController.text.isNotEmpty && departmentController.text.isNotEmpty){
-//
-//                           FirebaseFirestore.instance.collection('users').doc(emailID).update({
-//                             'name':nameController.text.toString(),
-//                             'department':departmentController.text.toString()
-//                           });
-//                         }
-//                         else if(nameController.text.isNotEmpty) {
-//                           FirebaseFirestore.instance.collection('users').doc(emailID).update({
-//                             'name':nameController.text.toString()
-//                             // 'department':departmentController.text.toString()
-//                           });
-//                         }else if(departmentController.text.isNotEmpty) {
-//                           FirebaseFirestore.instance.collection('users').doc(emailID).update({
-//                             // 'name':nameController.text.toString()
-//                             'department':departmentController.text.toString()
-//                           });
-//                         }
-//                         Fluttertoast.showToast(msg: "Information updated Successfully");
-//                       }
-//                       setState(() {
-//                         textfields=!textfields;
-//                       });
-//                     },
-//                     // onPressed: (){},
-//                     style: ButtonStyle(
-//                       // elevation: MaterialStateProperty.resolveWith((states) => 5),
-//                       shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-//                         RoundedRectangleBorder(
-//                           borderRadius: BorderRadius.circular(80.0),
-//                         ),
-//                       ),
-//                       backgroundColor:
-//                       MaterialStateColor.resolveWith((states) => Colors.black),
-//                     ),
-//                   ),
-//                 ),
-//               ),
-//             ),
-
-
-          ],
+            ],
+          ),
         ),
       ),
     );

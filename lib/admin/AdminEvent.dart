@@ -1,19 +1,27 @@
-import 'package:event_flow/student/StudentEventDetails.dart';
+import 'package:event_flow/admin/AdminEventDetails.dart';
+import 'package:event_flow/admin/AdminEventDetailsFilling.dart';
+import 'package:event_flow/admin/AdminEventFullDetails.dart';
+import 'package:event_flow/faculty/FacultyEventDetailsFilling.dart';
+import 'package:event_flow/faculty/FacultyEventFullDetails.dart';
 import 'package:event_flow/student/StudentParticipated.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 
 class ProgramDetails {
   final String programDetails;
   final String date;
   final String time;
   final String id;
+  final String status; // Added status field to track pending/rejected
+
   ProgramDetails({
     required this.programDetails,
     required this.date,
     required this.time,
     required this.id,
+    this.status = 'approved',
   });
 
   factory ProgramDetails.fromFirestore(DocumentSnapshot doc) {
@@ -23,6 +31,7 @@ class ProgramDetails {
       date: data['startDate'] ?? '',
       time: data['startTime'] ?? '',
       id: doc.id,
+      status: data['permission'] ?? 'approved',
     );
   }
 }
@@ -31,7 +40,7 @@ Future<List<ProgramDetails>> fetchProgramDetails() async {
   try {
     QuerySnapshot querySnapshot =
     await FirebaseFirestore.instance.collection('events')
-    .where('permission', isEqualTo: 'approved')
+        .where('permission', isEqualTo: 'approved')
         .get();
 
     List<ProgramDetails> programList = querySnapshot.docs
@@ -46,6 +55,25 @@ Future<List<ProgramDetails>> fetchProgramDetails() async {
   }
 }
 
+// New function to fetch pending or rejected events
+Future<List<ProgramDetails>> fetchPendingRejectedRequests() async {
+  try {
+    QuerySnapshot querySnapshot =
+    await FirebaseFirestore.instance.collection('events')
+        .where('permission', whereIn: ['pending', 'rejected'])
+        .get();
+
+    List<ProgramDetails> requestsList = querySnapshot.docs
+        .map((DocumentSnapshot doc) => ProgramDetails.fromFirestore(doc))
+        .toList();
+
+    return requestsList;
+  } catch (e) {
+    print('Error fetching pending/rejected requests: $e');
+    return [];
+  }
+}
+
 enum SortOption {
   dateAscending,
   dateDescending,
@@ -53,14 +81,14 @@ enum SortOption {
   titleZA,
 }
 
-class StudentEvent extends StatefulWidget {
+class AdminEvent extends StatefulWidget {
   @override
-  _StudentEventState createState() => _StudentEventState();
+  _AdminEventState createState() => _AdminEventState();
 }
 final FirebaseAuth _auth = FirebaseAuth.instance;
 User? user = _auth.currentUser;
 
-class _StudentEventState extends State<StudentEvent> {
+class _AdminEventState extends State<AdminEvent> {
   int _selectedIndex = 0;
   late int faculty;
   late String emailID;
@@ -100,7 +128,6 @@ class _StudentEventState extends State<StudentEvent> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        // color: Colors.grey[100],
         border: Border(
           bottom: BorderSide(color: Colors.grey[300]!, width: 1),
         ),
@@ -242,33 +269,18 @@ class _StudentEventState extends State<StudentEvent> {
     return Scaffold(
       body: SafeArea(
         child: Container(
-          // margin: EdgeInsets.only(top: 30),
           child: DefaultTabController(
-            length: 2,
+            length: 3, // Changed from 2 to 3 for the new tab
             child: Column(
               children: [
                 TabBar(
                   labelColor: Colors.black,
-                  overlayColor: WidgetStateProperty.resolveWith((states) => Colors.transparent),
+                  overlayColor: MaterialStateProperty.resolveWith((states) => Colors.transparent),
                   indicatorColor: Colors.black,
-                  dividerColor: WidgetStateColor.resolveWith(
+                  dividerColor: MaterialStateColor.resolveWith(
                         (states) => Colors.black,
                   ),
                   indicatorSize: TabBarIndicatorSize.tab,
-                  // padding: EdgeInsets.all(4),
-                  // indicator: BoxDecoration(
-                  //   color: Colors.white,
-                  //   borderRadius: BorderRadius.circular(25),
-                  //   boxShadow: [
-                  //     BoxShadow(
-                  //       color: Colors.black.withOpacity(0.1),
-                  //       blurRadius: 4,
-                  //       offset: Offset(0, 2),
-                  //     ),
-                  //   ],
-                  // ),
-                  // labelColor: Colors.black,
-                  // unselectedLabelColor: Colors.black54,
                   tabs: [
                     Tab(
                       child: Padding(
@@ -286,7 +298,22 @@ class _StudentEventState extends State<StudentEvent> {
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 8.0),
                         child: Text(
+                          textAlign: TextAlign.center,
                           "Your Activities",
+                          style: TextStyle(
+                            fontFamily: "MainFont",
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ),
+                    // New Tab for Requests
+                    Tab(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: Text(
+                          "Requests",
                           style: TextStyle(
                             fontFamily: "MainFont",
                             fontWeight: FontWeight.w600,
@@ -296,16 +323,18 @@ class _StudentEventState extends State<StudentEvent> {
                     ),
                   ],
                 ),
-                // SizedBox(height: 10),
                 _buildSortFilterSection(),
                 Expanded(
                   child: TabBarView(
                     children: [
-                      // First Tab: StudentEvent
+                      // First Tab: Events
                       _buildEventsList1(fetchProgramDetails()),
 
                       // Second Tab: Your Activities
                       _buildEventsList2(fetchUserActivities()),
+
+                      // Third Tab: Requests
+                      _buildRequestsList(fetchPendingRejectedRequests()),
                     ],
                   ),
                 ),
@@ -314,19 +343,207 @@ class _StudentEventState extends State<StudentEvent> {
           ),
         ),
       ),
-      // floatingActionButton: FloatingActionButton.extended(
-      //   onPressed: () => {},
-      //   // onPressed: ()=> Navigator.push(context, MaterialPageRoute(builder: (context) => StudentEventsHistory(),)),
-      //   label: const Text(
-      //     'History',
-      //     style: TextStyle(fontFamily: 'MainFont', color: Colors.white),
-      //   ),
-      //   backgroundColor: Colors.black,
-      //   shape: RoundedRectangleBorder(
-      //     borderRadius: BorderRadius.circular(30),
-      //   ),
-      //   elevation: 4,
-      // ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: ()=> Navigator.push(context, MaterialPageRoute(builder: (context) =>AdminEventDetailsFilling(),)),
+        label: const Text(
+          'Add Event',
+          style: TextStyle(fontFamily: 'MainFont', color: Colors.white),
+        ),
+        backgroundColor: Colors.black,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(30),
+        ),
+        elevation: 4,
+      ),
+    );
+  }
+
+  // New widget for displaying pending/rejected requests
+  Widget _buildRequestsList(Future<List<ProgramDetails>> futureRequests) {
+    return FutureBuilder<List<ProgramDetails>>(
+      future: futureRequests,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(
+            child: CircularProgressIndicator(
+              color: Colors.black,
+              strokeWidth: 3,
+            ),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, size: 48, color: Colors.red),
+                SizedBox(height: 16),
+                Text(
+                  'Error loading requests',
+                  style: TextStyle(fontFamily: "MainFont", fontSize: 16),
+                ),
+              ],
+            ),
+          );
+        }
+
+        List<ProgramDetails> requestsList = snapshot.data ?? [];
+
+        if (requestsList.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.hourglass_empty, size: 64, color: Colors.grey),
+                SizedBox(height: 16),
+                Text(
+                  'No pending or rejected requests',
+                  style: TextStyle(
+                    fontFamily: "MainFont",
+                    fontSize: 18,
+                    color: Colors.grey[700],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // Apply the current sort option
+        _sortPrograms(requestsList);
+
+        return ListView.builder(
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          itemBuilder: (context, index) {
+            ProgramDetails requestDetails = requestsList[index];
+            return Card(
+              color: Colors.white,
+              margin: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+              elevation: 5,
+              shadowColor: Colors.black,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AdminEventFullDetails(eventId: requestDetails.id,request: 1,),
+                    ),
+                  );
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[100],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              requestDetails.status == 'pending'
+                                  ? Icons.hourglass_top
+                                  : Icons.cancel_outlined,
+                              color: requestDetails.status == 'pending'
+                                  ? Colors.amber[700]
+                                  : Colors.red[700],
+                              size: 24,
+                            ),
+                          ),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        requestDetails.programDetails,
+                                        style: TextStyle(
+                                          fontFamily: "MainFont",
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: requestDetails.status == 'pending'
+                                            ? Colors.amber[100]
+                                            : Colors.red[100],
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        requestDetails.status == 'pending' ? 'Pending' : 'Rejected',
+                                        style: TextStyle(
+                                          fontFamily: "MainFont1",
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: requestDetails.status == 'pending'
+                                              ? Colors.amber[800]
+                                              : Colors.red[800],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.calendar_today,
+                                      size: 14,
+                                      color: Colors.grey[700],
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      getDate(requestDetails.date),
+                                      style: TextStyle(
+                                        fontFamily: "MainFont1",
+                                        color: Colors.grey[800],
+                                      ),
+                                    ),
+                                    SizedBox(width: 16),
+                                    Icon(
+                                      Icons.access_time,
+                                      size: 14,
+                                      color: Colors.grey[700],
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      requestDetails.time,
+                                      style: TextStyle(
+                                        fontFamily: "MainFont1",
+                                        color: Colors.grey[800],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+          itemCount: requestsList.length,
+        );
+      },
     );
   }
 
@@ -399,24 +616,12 @@ class _StudentEventState extends State<StudentEvent> {
               child: InkWell(
                 borderRadius: BorderRadius.circular(12),
                 onTap: () {
-                  // if (!(futureEvents == fetchProgramDetails())) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => StudentEventDetails(eventId: programDetails.id),
-                      ),
-                    );
-                  // } else {
-                  //   Navigator.push(
-                  //     context,
-                  //     MaterialPageRoute(
-                  //       builder: (context) => StudentParticipated(
-                  //         eventId: programDetails.id,
-                  //         email: user!.email,
-                  //       ),
-                  //     ),
-                  //   );
-                  // }
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AdminEventDetails(eventId: programDetails.id),
+                    ),
+                  );
                 },
                 child: Padding(
                   padding: const EdgeInsets.all(12.0),
@@ -499,6 +704,7 @@ class _StudentEventState extends State<StudentEvent> {
       },
     );
   }
+
   Widget _buildEventsList2(Future<List<ProgramDetails>> futureEvents) {
     return FutureBuilder<List<ProgramDetails>>(
       future: futureEvents,
@@ -568,25 +774,12 @@ class _StudentEventState extends State<StudentEvent> {
               child: InkWell(
                 borderRadius: BorderRadius.circular(12),
                 onTap: () {
-                  // if (!(futureEvents == fetchProgramDetails())) {
-                  //   Navigator.push(
-                  //     context,
-                  //     MaterialPageRoute(
-                  //       builder: (context) => StudentEventDetails(eventId: programDetails.id),
-                  //     ),
-                  //   );
-                  // } else {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => StudentParticipated(
-                          eventId: programDetails.id,
-                          email: user!.email,
-
-                        ),
-                      ),
-                    );
-                  // }
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AdminEventFullDetails(eventId: programDetails.id,request: 0,),
+                    ),
+                  );
                 },
                 child: Padding(
                   padding: const EdgeInsets.all(12.0),
@@ -688,20 +881,34 @@ class _StudentEventState extends State<StudentEvent> {
 
   Future<List<ProgramDetails>> fetchUserActivities() async {
     try {
-      QuerySnapshot userQuery = await FirebaseFirestore.instance
-          .collection('users')
-          .where('email', isEqualTo: user?.email)
-          .get();
-
-      if (userQuery.docs.isNotEmpty) {
-        DocumentSnapshot userDoc = userQuery.docs.first;
-        List<dynamic> activityIds = userDoc['activities'] ?? [];
-        List<ProgramDetails> userActivities = await fetchProgramDetailsByIds(activityIds);
-        return userActivities;
-      } else {
-        print('User not found');
+      final email = user?.email;
+      if (email == null) {
+        print('User email is null');
         return [];
       }
+
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('events')
+          .where('uniqueName', isEqualTo: email)
+          .get();
+
+      if (querySnapshot.docs.isEmpty) {
+        print('No matching documents found');
+        return [];
+      }
+
+      List<ProgramDetails> userActivities = querySnapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+
+        return ProgramDetails(
+          programDetails: data['programDetails'] ?? '',
+          date: data['startDate'] ?? '',
+          time: data['startTime'] ?? '',
+          id: doc.id,
+        );
+      }).toList();
+
+      return userActivities;
     } catch (e) {
       print('Error fetching user activities: $e');
       return [];
@@ -742,7 +949,7 @@ void main() {
           primary: Colors.black,
         ),
       ),
-      home: StudentEvent(),
+      home: AdminEvent(),
     ),
   );
 }

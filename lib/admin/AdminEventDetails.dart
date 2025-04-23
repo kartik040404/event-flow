@@ -4,19 +4,19 @@ import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
-class StudentEventDetails extends StatefulWidget {
+class AdminEventDetails extends StatefulWidget {
   final String eventId;
 
-  const StudentEventDetails({
+  const AdminEventDetails({
     Key? key,
     required this.eventId,
   }) : super(key: key);
 
   @override
-  State<StudentEventDetails> createState() => _StudentEventDetailsState();
+  State<AdminEventDetails> createState() => _AdminEventDetailsState();
 }
 
-class _StudentEventDetailsState extends State<StudentEventDetails> {
+class _AdminEventDetailsState extends State<AdminEventDetails> {
   bool _loading = true;
   Map<String, dynamic> eventDetails = {};
   bool hasParticipated = false;
@@ -249,8 +249,6 @@ class _StudentEventDetailsState extends State<StudentEventDetails> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
@@ -285,24 +283,24 @@ class _StudentEventDetailsState extends State<StudentEventDetails> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Container(
-                //   width: double.infinity,
-                //   height: 200,
-                //   decoration: BoxDecoration(
-                //     color: Colors.blue.shade100,
-                //     borderRadius: BorderRadius.only(
-                //       bottomLeft: Radius.circular(30),
-                //       bottomRight: Radius.circular(30),
-                //     ),
-                //   ),
-                //   child: Center(
-                //     child: Icon(
-                //       Icons.event,
-                //       size: 100,
-                //       color: Colors.blue.shade800,
-                //     ),
-                //   ),
-                // ),
+                Container(
+                  width: double.infinity,
+                  height: 200,
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade100,
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(30),
+                      bottomRight: Radius.circular(30),
+                    ),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      Icons.event,
+                      size: 100,
+                      color: Colors.blue.shade800,
+                    ),
+                  ),
+                ),
                 Padding(
                   padding: const EdgeInsets.all(20.0),
                   child: Column(
@@ -414,124 +412,16 @@ class _StudentEventDetailsState extends State<StudentEventDetails> {
                         ),
                       ],
                       // Add space at the bottom for the floating button
-                      // SizedBox(height: 100),
+                      SizedBox(height: 100),
                     ],
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 0.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Header
-                      Text(
-                        'Event Poster',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: isDarkMode ? Colors.white : Colors.black87,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      // Image Container
-                      Container(
-                        height: eventDetails['posterUrl']!=null?380:120,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: isDarkMode
-                                  ? Colors.black.withOpacity(0.3)
-                                  : Colors.black.withOpacity(0.1),
-                              spreadRadius: 2,
-                              blurRadius: 10,
-                              offset: Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child:
-                            eventDetails['posterUrl']!=null?
-                            _buildNetworkImageContainer()
-                                :_buildPlaceholderContainer(isDarkMode)
-                        ),
-                      ),
-
-                      // if (_hasUploadError)
-                      //   Container(
-                      //     margin: EdgeInsets.only(top: 16),
-                      //     padding: EdgeInsets.all(12),
-                      //     decoration: BoxDecoration(
-                      //       color: Colors.red.withOpacity(0.1),
-                      //       borderRadius: BorderRadius.circular(12),
-                      //       border: Border.all(color: Colors.red.withOpacity(0.3)),
-                      //     ),
-                      //     child: Text(
-                      //       'Error: $_errorMessage',
-                      //       style: TextStyle(color: Colors.red[800], fontSize: 14),
-                      //     ),
-                      //   ),
-                      //
-                      // if (_uploadedImageUrl != null)
-                      //   Container(
-                      //     margin: EdgeInsets.only(top: 16),
-                      //     padding: EdgeInsets.all(12),
-                      //     decoration: BoxDecoration(
-                      //       color: isDarkMode
-                      //           ? Colors.indigo.withOpacity(0.2)
-                      //           : Colors.indigo.withOpacity(0.1),
-                      //       borderRadius: BorderRadius.circular(12),
-                      //       border: Border.all(
-                      //         color: isDarkMode
-                      //             ? Colors.indigo.withOpacity(0.3)
-                      //             : Colors.indigo.withOpacity(0.2),
-                      //       ),
-                      //     ),
-                      //   ),
-                    ],
-                  ),
-                ),
-                SizedBox(height: 100),
-
               ],
-
-            ),
-
-          ),
-          Positioned(
-            bottom: 20,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: ElevatedButton(
-                onPressed: hasParticipated
-                    ? null
-                    : () => showParticipationConfirmationDialog(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: hasParticipated ? Colors.grey : Colors.blue.shade800,
-                  foregroundColor: Colors.white,
-                  elevation: 5,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                ),
-                child: Text(
-                  hasParticipated ? "Already Participated" : "Participate",
-                  style: TextStyle(
-                    fontFamily: 'MainFont',
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
             ),
           ),
         ],
       ),
     );
-
   }
 
   Widget _buildInfoCard({
@@ -588,76 +478,6 @@ class _StudentEventDetailsState extends State<StudentEventDetails> {
                 ],
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-  Widget _buildNetworkImageContainer() {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Image.network(
-          eventDetails?['posterUrl']!,
-          fit: BoxFit.cover,
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return Center(
-              child: CircularProgressIndicator(
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded /
-                    loadingProgress.expectedTotalBytes!
-                    : null,
-                color: Colors.white,
-              ),
-            );
-          },
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              color: Colors.grey[900],
-              child: Center(
-                child: Icon(
-                  Icons.error_outline,
-                  color: Colors.white,
-                  size: 60,
-                ),
-              ),
-            );
-          },
-        ),
-      ],
-    );
-  }
-  Widget _buildPlaceholderContainer(bool isDarkMode) {
-    return Container(
-      color: isDarkMode ? Color(0xFF2A2A2A) : Colors.grey[100],
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.cloud_upload_outlined,
-              size: 80,
-              color: isDarkMode ? Colors.white38 : Colors.grey[400],
-            ),
-            SizedBox(height: eventDetails?['posterUrl']!=null?16:0),
-            Text(
-              'No event poster available',
-              style: TextStyle(
-                color: isDarkMode ? Colors.white70 : Colors.grey[700],
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            // SizedBox(height: 8),
-            // Text(
-            //   'Tap a button below to select an image',
-            //   style: TextStyle(
-            //     color: isDarkMode ? Colors.white38 : Colors.grey[500],
-            //     fontSize: 14,
-            //   ),
-            //   textAlign: TextAlign.center,
-            // ),
           ],
         ),
       ),

@@ -392,7 +392,8 @@ class _FacultyEventState extends State<FacultyEvent> {
           padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           itemBuilder: (context, index) {
             ProgramDetails programDetails = programList[index];
-            return Card(
+            return
+              Card(
               color: Colors.white,
               margin: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
               elevation: 5,
@@ -410,17 +411,6 @@ class _FacultyEventState extends State<FacultyEvent> {
                         builder: (context) => FacultyEventDetails(eventId: programDetails.id),
                       ),
                     );
-                  // } else {
-                    // Navigator.push(
-                    //   context,
-                    //   MaterialPageRoute(
-                    //     builder: (context) => StudentParticipated(
-                    //       eventId: programDetails.id,
-                    //       email: user!.email,
-                    //     ),
-                    //   ),
-                    // );
-
                 },
                 child: Padding(
                   padding: const EdgeInsets.all(12.0),
@@ -561,7 +551,8 @@ class _FacultyEventState extends State<FacultyEvent> {
           padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           itemBuilder: (context, index) {
             ProgramDetails programDetails = programList[index];
-            return Card(
+            return
+              Card(
               color: Colors.white,
               margin: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
               elevation: 5,
@@ -579,18 +570,7 @@ class _FacultyEventState extends State<FacultyEvent> {
                         builder: (context) => FacultyEventFullDetails(eventId: programDetails.id),
                       ),
                     );
-                  // } else {
-                    // Navigator.push(
-                    //   context,
-                    //   MaterialPageRoute(
-                    //     builder: (context) => StudentParticipated(
-                    //       eventId: programDetails.id,
-                    //       email: user!.email,
-                    //     ),
-                    //   ),
-                    // );
-
-                },
+                 },
                 child: Padding(
                   padding: const EdgeInsets.all(12.0),
                   child: Column(

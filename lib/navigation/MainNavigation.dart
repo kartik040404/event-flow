@@ -1,5 +1,7 @@
 import 'package:event_flow/EventsScreen.dart';
 import 'package:event_flow/ProfileScreen.dart';
+import 'package:event_flow/admin/AdminEvent.dart';
+import 'package:event_flow/admin/AdminProfile.dart';
 import 'package:event_flow/faculty/FacultyEvent.dart';
 import 'package:event_flow/faculty/FacultyHome.dart';
 import 'package:event_flow/faculty/FacultyProfile.dart';
@@ -10,7 +12,6 @@ import 'package:google_nav_bar/google_nav_bar.dart';
 import '../admin/AdminHome.dart';
 import '../student/StudentHome.dart';
 import 'UserRole.dart';
-
 
 class MainNavigation extends StatefulWidget {
   final UserRole role;
@@ -31,51 +32,96 @@ class _MainNavigationState extends State<MainNavigation> {
       case UserRole.faculty:
         return [FacultyHome(), FacultyEvent(), FacultyProfile()];
       case UserRole.admin:
-        return [AdminHome(), Eventsscreen(), Profilescreen()];
+        return [AdminHome(), AdminEvent(), AdminProfile()];
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: _pages[_selectedIndex],
-        bottomNavigationBar: Container(
+      body: _pages[_selectedIndex],
+      bottomNavigationBar: Container(
         decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [BoxShadow(blurRadius: 20, color: Colors.black.withOpacity(0.1))],
-    ),
-    child: Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 12),
-    child: GNav(
-    gap: 8,
-    activeColor: Colors.white,
-    color: Colors.grey[800],
-    iconSize: 24,
-    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-    duration: Duration(milliseconds: 400),
-    tabBackgroundColor: Colors.black,
-    // tabBackgroundGradient: LinearGradient(
-    // colors: [
-    // Colors.white,
-    // Colors.black,
-    // ],
-      // begin: Alignment.centerLeft,
-      // end: Alignment.centerRight,
-      //   stops: [0.0,1], // even more subtle white
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              blurRadius: 20,
+              color: Colors.black.withOpacity(0.1),
+              offset: Offset(0, -3),
+              spreadRadius: 1,
+            )
+          ],
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 12),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blue[50]!, Colors.white],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+          ),
+          child: GNav(
+            gap: 8,
+            activeColor: Colors.white,
+            color: Colors.blue[800],
+            iconSize: 24,
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            duration: Duration(milliseconds: 300),
+            curve: Curves.easeOutExpo,
+            tabBackgroundGradient: LinearGradient(
+              colors: [
+                Colors.blue.shade700,
+                Colors.lightBlue.shade200,
+              ],
+              begin: Alignment.bottomLeft,
+              end: Alignment.topRight,
+            ),
 
-    // ),
-    tabs: [
-    GButton(icon: Icons.home, text: 'Home'),
-    GButton(icon: Icons.event, text: 'Events'),
-    GButton(icon: Icons.person, text: 'Profile'),
-    ],
-    selectedIndex: _selectedIndex,
-    onTabChange: (index) {
-    setState(() => _selectedIndex = index);
-    },
-    ),
-    ),
-    ),
+            tabBorderRadius: 30,
+            rippleColor: Colors.blue[300]!,
+            hoverColor: Colors.blue[100]!,
+            tabs: [
+              GButton(
+                icon: Icons.home,
+                text: 'Home',
+                iconColor: Colors.blue[600],
+                iconActiveColor: Colors.white,
+                textColor: Colors.white,
+                iconSize: 24,
+              ),
+              GButton(
+                icon: Icons.event,
+                text: 'Events',
+                iconColor: Colors.blue[600],
+                iconActiveColor: Colors.white,
+                textColor: Colors.white,
+                iconSize: 24,
+              ),
+              GButton(
+                icon: Icons.person,
+                text: 'Profile',
+                iconColor: Colors.blue[600],
+                iconActiveColor: Colors.white,
+                textColor: Colors.white,
+                iconSize: 24,
+              ),
+            ],
+            selectedIndex: _selectedIndex,
+            onTabChange: (index) {
+              setState(() => _selectedIndex = index);
+            },
+          ),
+        ),
+      ),
     );
-    }
+  }
 }

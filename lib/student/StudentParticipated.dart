@@ -23,6 +23,7 @@ class _StudentParticipatedState extends State<StudentParticipated> {
   late String date = '';
   late String time = '';
   late bool isLoading;
+  late Map<String, dynamic> eventData;
   int takeFeedback = 0;
   bool userHasGivenFeedback = false;
   bool isUserInAttendance = false;
@@ -45,7 +46,7 @@ class _StudentParticipatedState extends State<StudentParticipated> {
           .get();
 
       if (eventSnapshot.exists) {
-        Map<String, dynamic> eventData = eventSnapshot.data() as Map<String, dynamic>;
+        eventData = eventSnapshot.data() as Map<String, dynamic>;
 
         // Check if user is in attendance array
         bool userInAttendance = false;
@@ -115,6 +116,8 @@ class _StudentParticipatedState extends State<StudentParticipated> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -133,24 +136,6 @@ class _StudentParticipatedState extends State<StudentParticipated> {
             : Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: EdgeInsets.all(20),
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
-                ),
-              ),
-              child: Center(
-                child: Icon(
-                  Icons.event,
-                  size: 80,
-                  color: Colors.blue.shade800,
-                ),
-              ),
-            ),
             Padding(
               padding: const EdgeInsets.all(20.0),
               child: Column(
@@ -180,6 +165,53 @@ class _StudentParticipatedState extends State<StudentParticipated> {
                     color: Colors.orange.shade100,
                     iconColor: Colors.orange.shade800,
                   ),
+
+                  SizedBox(height: 15),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 0.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Header
+                        Text(
+                          'Event Poster',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: isDarkMode ? Colors.white : Colors.black87,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        // Image Container
+                        Container(
+                          height: eventData['posterUrl']!=null?380:120,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: isDarkMode
+                                    ? Colors.black.withOpacity(0.3)
+                                    : Colors.black.withOpacity(0.1),
+                                spreadRadius: 2,
+                                blurRadius: 10,
+                                offset: Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child:
+                              eventData['posterUrl']!=null?
+                              _buildNetworkImageContainer()
+                                  :_buildPlaceholderContainer(isDarkMode)
+                          ),
+                        ),
+
+                      ],
+                    ),
+                  ),
+
                   SizedBox(height: 40),
                   Center(
                     child: ElevatedButton(
@@ -232,6 +264,7 @@ class _StudentParticipatedState extends State<StudentParticipated> {
                     ),
                   ),
                   SizedBox(height: 15),
+
                   Center(
                     child: Text(
                       "Show QR Code",
@@ -414,6 +447,76 @@ class _StudentParticipatedState extends State<StudentParticipated> {
       ),
     );
   }
+  Widget _buildNetworkImageContainer() {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Image.network(
+          eventData?['posterUrl']!,
+          fit: BoxFit.cover,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                    loadingProgress.expectedTotalBytes!
+                    : null,
+                color: Colors.white,
+              ),
+            );
+          },
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              color: Colors.grey[900],
+              child: Center(
+                child: Icon(
+                  Icons.error_outline,
+                  color: Colors.white,
+                  size: 60,
+                ),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+  Widget _buildPlaceholderContainer(bool isDarkMode) {
+    return Container(
+      color: isDarkMode ? Color(0xFF2A2A2A) : Colors.grey[100],
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.cloud_upload_outlined,
+              size: 80,
+              color: isDarkMode ? Colors.white38 : Colors.grey[400],
+            ),
+            SizedBox(height: eventData?['posterUrl']!=null?16:0),
+            Text(
+              'No event poster available',
+              style: TextStyle(
+                color: isDarkMode ? Colors.white70 : Colors.grey[700],
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            // SizedBox(height: 8),
+            // Text(
+            //   'Tap a button below to select an image',
+            //   style: TextStyle(
+            //     color: isDarkMode ? Colors.white38 : Colors.grey[500],
+            //     fontSize: 14,
+            //   ),
+            //   textAlign: TextAlign.center,
+            // ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class FeedbackDialog extends StatefulWidget {
@@ -462,7 +565,7 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
               (eventData['attendance'] as List).contains(widget.email)) {
 
             // Update totalFeedback count
-            await updateTotalFeedback(selectedStars);
+            // await updateTotalFeedback(selectedStars);
 
             // Update feedback type count
             await updateFeedbackType(selectedFeedbackType);

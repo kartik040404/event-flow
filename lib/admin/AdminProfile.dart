@@ -6,12 +6,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 
-class FacultyProfile extends StatefulWidget {
+class AdminProfile extends StatefulWidget {
   @override
-  State<FacultyProfile> createState() => _FacultyProfileState();
+  State<AdminProfile> createState() => _AdminProfileState();
 }
 
-class _FacultyProfileState extends State<FacultyProfile> with SingleTickerProviderStateMixin {
+class _AdminProfileState extends State<AdminProfile> with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
   String id = "";
   String name = 'Name';

@@ -1,7 +1,7 @@
+
 import 'dart:io';
 
 import 'package:excel/excel.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -10,22 +10,18 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 import 'package:share_plus/share_plus.dart';
-import 'dart:convert';
-import 'dart:io';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http;
-class FacultyEventFullDetails extends StatefulWidget {
-  final String eventId;
 
-  FacultyEventFullDetails({required this.eventId});
+class AdminEventFullDetails extends StatefulWidget {
+  final String eventId;
+  final int request;
+
+  AdminEventFullDetails({required this.eventId,required this.request});
 
   @override
-  _FacultyEventFullDetailsState createState() => _FacultyEventFullDetailsState();
+  _AdminEventFullDetailsState createState() => _AdminEventFullDetailsState();
 }
 
-class _FacultyEventFullDetailsState extends State<FacultyEventFullDetails> {
+class _AdminEventFullDetailsState extends State<AdminEventFullDetails> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   bool isLoading = true;
   Map<String, dynamic>? eventData;
@@ -37,17 +33,7 @@ class _FacultyEventFullDetailsState extends State<FacultyEventFullDetails> {
     super.initState();
     fetchEventDetails();
   }
-  File? _selectedImage;
-  String? _uploadedImageUrl;
-  bool _isUploading = false;
-  bool _hasUploadError = false;
-  String _errorMessage = '';
-  late AnimationController _animationController;
-  late Animation<double> _animation;
 
-  // Cloudinary credentials - replace with your actual values
-  final String cloudName = 'dp7uduwn8';
-  final String uploadPreset = 'Preset'; // Create an unsigned upload preset in Cloudinary dashboard
   Future<void> fetchEventDetails() async {
     try {
       DocumentSnapshot eventDoc = await _firestore
@@ -68,7 +54,7 @@ class _FacultyEventFullDetailsState extends State<FacultyEventFullDetails> {
             statusColor = Colors.green;
           } else if (permissionStatus == 'rejected') {
             statusColor = Colors.red;
-          } 
+          }
         });
       } else {
         showToast('Event not found');
@@ -83,6 +69,59 @@ class _FacultyEventFullDetailsState extends State<FacultyEventFullDetails> {
         isLoading = false;
       });
     }
+  }
+
+  Future<void> updatePermissionStatus(String status) async {
+    try {
+      await _firestore.collection('events').doc(widget.eventId).update({
+        'permission': status
+      });
+
+      setState(() {
+        permissionStatus = status;
+        if (status == 'approved') {
+          statusColor = Colors.green;
+        } else if (status == 'rejected') {
+          statusColor = Colors.red;
+        }
+      });
+
+      showToast('Event ${status.toUpperCase()} successfully');
+    } catch (e) {
+      print('Error updating permission status: $e');
+      showToast('Failed to update event status');
+    }
+  }
+
+  void showPermissionConfirmationDialog(String action) {
+    String status = action == 'approve' ? 'approved' : 'rejected';
+    String message = action == 'approve'
+        ? 'Are you sure you want to approve this event?'
+        : 'Are you sure you want to reject this event?';
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('${action.capitalize()} Event'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            child: Text('Cancel'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          TextButton(
+            child: Text(action.capitalize()),
+            onPressed: () {
+              Navigator.of(context).pop();
+              updatePermissionStatus(status);
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: action == 'approve' ? Colors.green : Colors.red,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> deleteEvent() async {
@@ -162,8 +201,6 @@ class _FacultyEventFullDetailsState extends State<FacultyEventFullDetails> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
       appBar: AppBar(
         title: Text('Event Details'),
@@ -293,85 +330,53 @@ class _FacultyEventFullDetailsState extends State<FacultyEventFullDetails> {
               ],
             ),
 
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 0.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Header
-                  Text(
-                    'Event Poster',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: isDarkMode ? Colors.white : Colors.black87,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  // Image Container
-                  Container(
-                    height: eventData?['posterUrl']!=null?380:120,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: isDarkMode
-                              ? Colors.black.withOpacity(0.3)
-                              : Colors.black.withOpacity(0.1),
-                          spreadRadius: 2,
-                          blurRadius: 10,
-                          offset: Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child:
-                      eventData?['posterUrl']!=null?
-                      _buildNetworkImageContainer()
-                          :_buildPlaceholderContainer(isDarkMode)
-                    ),
-                  ),
-
-                  // if (_hasUploadError)
-                  //   Container(
-                  //     margin: EdgeInsets.only(top: 16),
-                  //     padding: EdgeInsets.all(12),
-                  //     decoration: BoxDecoration(
-                  //       color: Colors.red.withOpacity(0.1),
-                  //       borderRadius: BorderRadius.circular(12),
-                  //       border: Border.all(color: Colors.red.withOpacity(0.3)),
-                  //     ),
-                  //     child: Text(
-                  //       'Error: $_errorMessage',
-                  //       style: TextStyle(color: Colors.red[800], fontSize: 14),
-                  //     ),
-                  //   ),
-                  //
-                  // if (_uploadedImageUrl != null)
-                  //   Container(
-                  //     margin: EdgeInsets.only(top: 16),
-                  //     padding: EdgeInsets.all(12),
-                  //     decoration: BoxDecoration(
-                  //       color: isDarkMode
-                  //           ? Colors.indigo.withOpacity(0.2)
-                  //           : Colors.indigo.withOpacity(0.1),
-                  //       borderRadius: BorderRadius.circular(12),
-                  //       border: Border.all(
-                  //         color: isDarkMode
-                  //             ? Colors.indigo.withOpacity(0.3)
-                  //             : Colors.indigo.withOpacity(0.2),
-                  //       ),
-                  //     ),
-                  //   ),
-                ],
-              ),
-            ),
             // Action Buttons
             SizedBox(height: 20),
-            permissionStatus=="approved"?buildActionButtons():SizedBox()
+
+            // Show approval/rejection buttons if request is 1 and status is pending
+            if (widget.request == 1 && permissionStatus == 'pending')
+              buildApprovalButtons(),
+
+            // Show event action buttons if status is approved
+            permissionStatus == "approved" ? buildActionButtons() : SizedBox()
           ],
         ),
+      ),
+    );
+  }
+
+  Widget buildApprovalButtons() {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 24),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: () => showPermissionConfirmationDialog('reject'),
+              icon: Icon(Icons.cancel),
+              label: Text('Reject'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
+          ),
+          SizedBox(width: 16),
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: () => showPermissionConfirmationDialog('approve'),
+              icon: Icon(Icons.check_circle),
+              label: Text('Approve'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -513,107 +518,16 @@ class _FacultyEventFullDetailsState extends State<FacultyEventFullDetails> {
       }).toList(),
     );
   }
+}
 
-  Widget _buildNetworkImageContainer() {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Image.network(
-          eventData?['posterUrl']!,
-          fit: BoxFit.cover,
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return Center(
-              child: CircularProgressIndicator(
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded /
-                    loadingProgress.expectedTotalBytes!
-                    : null,
-                color: Colors.white,
-              ),
-            );
-          },
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              color: Colors.grey[900],
-              child: Center(
-                child: Icon(
-                  Icons.error_outline,
-                  color: Colors.white,
-                  size: 60,
-                ),
-              ),
-            );
-          },
-        ),
-      ],
-    );
-  }
-  Widget _buildLoadingContainer(bool isDarkMode) {
-    return Container(
-      color: isDarkMode ? Colors.grey[900] : Colors.grey[200],
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: 60,
-              height: 60,
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.indigo),
-                strokeWidth: 3,
-              ),
-            ),
-            SizedBox(height: 16),
-            Text(
-              'Uploading to Cloudinary...',
-              style: TextStyle(
-                color: isDarkMode ? Colors.white70 : Colors.black87,
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-  Widget _buildPlaceholderContainer(bool isDarkMode) {
-    return Container(
-      color: isDarkMode ? Color(0xFF2A2A2A) : Colors.grey[100],
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.cloud_upload_outlined,
-              size: 80,
-              color: isDarkMode ? Colors.white38 : Colors.grey[400],
-            ),
-            SizedBox(height: eventData?['posterUrl']!=null?16:0),
-            Text(
-              'No event poster available',
-              style: TextStyle(
-                color: isDarkMode ? Colors.white70 : Colors.grey[700],
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            // SizedBox(height: 8),
-            // Text(
-            //   'Tap a button below to select an image',
-            //   style: TextStyle(
-            //     color: isDarkMode ? Colors.white38 : Colors.grey[500],
-            //     fontSize: 14,
-            //   ),
-            //   textAlign: TextAlign.center,
-            // ),
-          ],
-        ),
-      ),
-    );
+// Extension to capitalize strings
+extension StringExtension on String {
+  String capitalize() {
+    return "${this[0].toUpperCase()}${this.substring(1)}";
   }
 }
+
+// Rest of th
 
 // QR Scanner Screen
 class QRScannerScreen extends StatefulWidget {
@@ -801,251 +715,6 @@ class _EventReportScreenState extends State<EventReportScreen> {
     fetchAttendanceData();
   }
 
-  bool isFetchingFeedback = false;
-  Map<String, int> ratingData = {
-    'Very Bad': 0,
-    'Bad': 0,
-    'Average': 0,
-    'Good': 0,
-    'Excellent': 0,
-  };
-  bool showFeedback = false;
-
-// Add this new function to fetch feedback data
-  Future<void> fetchFeedbackData() async {
-    setState(() {
-      isFetchingFeedback = true;
-    });
-
-    try {
-      // Fetch event document to get rating data
-      DocumentSnapshot eventDoc = await _firestore
-          .collection('events')
-          .doc(widget.eventId)
-          .get();
-
-      if (!eventDoc.exists) {
-        showToast('Event not found');
-        setState(() {
-          isFetchingFeedback = false;
-        });
-        return;
-      }
-
-      Map<String, dynamic> eventData = eventDoc.data() as Map<String, dynamic>;
-
-      // Check if rating map exists
-      if (eventData.containsKey('rating') && eventData['rating'] is Map) {
-        Map<String, dynamic> ratingMap = Map<String, dynamic>.from(eventData['rating']);
-
-        Map<String, int> parsedRatings = {
-          'Very Bad': ratingMap['Very Bad'] ?? 0,
-          'Bad': ratingMap['Bad'] ?? 0,
-          'Average': ratingMap['Average'] ?? 0,
-          'Good': ratingMap['Good'] ?? 0,
-          'Excellent': ratingMap['Excellent'] ?? 0,
-        };
-
-        setState(() {
-          ratingData = parsedRatings;
-          showFeedback = true;
-          isFetchingFeedback = false;
-        });
-      } else {
-        showToast('No feedback data available for this event');
-        setState(() {
-          isFetchingFeedback = false;
-        });
-      }
-    } catch (e) {
-      print('Error fetching feedback data: $e');
-      showToast('Failed to load feedback data: ${e.toString()}');
-      setState(() {
-        isFetchingFeedback = false;
-      });
-    }
-  }
-
-// Add this function to calculate overall rating
-  double calculateOverallRating() {
-    int totalResponses = ratingData.values.reduce((a, b) => a + b);
-    if (totalResponses == 0) return 0;
-
-    // Calculate weighted average (Very Bad=1, Bad=2, Average=3, Good=4, Excellent=5)
-    double weightedSum =
-        ratingData['Very Bad']! * 1 +
-            ratingData['Bad']! * 2 +
-            ratingData['Average']! * 3 +
-            ratingData['Good']! * 4 +
-            ratingData['Excellent']! * 5;
-
-    // Convert to percentage (out of 5)
-    return (weightedSum / (totalResponses * 5)) * 100;
-  }
-
-// Add this function to build the feedback view
-  Widget _buildFeedbackView() {
-    int totalResponses = ratingData.values.reduce((a, b) => a + b);
-    double overallRating = calculateOverallRating();
-
-    // Define rating colors
-    Map<String, Color> ratingColors = {
-      'Very Bad': Colors.red,
-      'Bad': Colors.orange,
-      'Average': Colors.amber,
-      'Good': Colors.lightGreen,
-      'Excellent': Colors.green,
-    };
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Text(
-                'Event Feedback',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              Spacer(),
-              IconButton(
-                icon: Icon(Icons.close),
-                onPressed: () {
-                  setState(() {
-                    showFeedback = false;
-                  });
-                },
-              ),
-            ],
-          ),
-        ),
-
-        // Overall rating display
-        Center(
-          child: Column(
-            children: [
-              Text(
-                'Overall Rating',
-                style: TextStyle(fontSize: 18),
-              ),
-              SizedBox(height: 8),
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  SizedBox(
-                    height: 120,
-                    width: 120,
-                    child: CircularProgressIndicator(
-                      value: overallRating / 100,
-                      strokeWidth: 12,
-                      backgroundColor: Colors.grey[300],
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        overallRating >= 80 ? Colors.green :
-                        overallRating >= 60 ? Colors.lightGreen :
-                        overallRating >= 40 ? Colors.amber :
-                        overallRating >= 20 ? Colors.orange : Colors.red,
-                      ),
-                    ),
-                  ),
-                  Column(
-                    children: [
-                      Text(
-                        '${overallRating.toStringAsFixed(1)}%',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        '$totalResponses responses',
-                        style: TextStyle(fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-
-        SizedBox(height: 24),
-
-        // Pie chart for rating distribution
-        Expanded(
-          child: totalResponses > 0
-              ? Container(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              children: [
-                // Text(
-                //   'Rating Distribution',
-                //   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                // ),
-                SizedBox(height: 80),
-                Expanded(
-                  child: PieChart(
-                    PieChartData(
-                      sections: ratingData.entries.map((entry) {
-                        double percentage = totalResponses > 0
-                            ? (entry.value / totalResponses) * 100
-                            : 0;
-                        return PieChartSectionData(
-                          color: ratingColors[entry.key]!,
-                          value: entry.value.toDouble(),
-                          title: entry.value > 0 ? '${percentage.toStringAsFixed(1)}%' : '',
-                          radius: 100,
-                          titleStyle: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        );
-                      }).toList(),
-                      sectionsSpace: 2,
-                      centerSpaceRadius: 40,
-                    ),
-                  ),
-                ),
-                SizedBox(height: 100),
-                // Legend
-                Wrap(
-                  spacing: 16,
-                  runSpacing: 8,
-                  alignment: WrapAlignment.center,
-                  children: ratingData.entries.map((entry) {
-                    return Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 16,
-                          height: 16,
-                          decoration: BoxDecoration(
-                            color: ratingColors[entry.key],
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        SizedBox(width: 4),
-                        Text('${entry.key} (${entry.value})'),
-                      ],
-                    );
-                  }).toList(),
-                ),
-              ],
-            ),
-          )
-              : Center(
-            child: Text(
-              'No feedback data available',
-              style: TextStyle(fontSize: 16),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-
   Future<void> fetchAttendanceData() async {
     try {
       // Fetch event data to get attendance list
@@ -1182,6 +851,25 @@ class _EventReportScreenState extends State<EventReportScreen> {
     });
 
     try {
+      // Request storage permission with better error handling
+      // if (Platform.isAndroid) {
+      //   var status = await Permission.storage.status;
+      //   if (!status.isGranted) {
+      //     status = await Permission.storage.request();
+      //     if (!status.isGranted) {
+      //       showToast('Storage permission required to export report');
+      //       // Show dialog to guide user to app settings
+      //       // showPermissionDialog();
+      //       setState(() {
+      //         isExporting = false;
+      //       });
+      //       return;
+      //     }
+      //   }
+      // } else if (Platform.isIOS) {
+      //   // iOS doesn't need explicit permission for saving to documents directory
+      // }
+      //
 
       // Create a new Excel document
       final excel = Excel.createExcel();
@@ -1254,7 +942,7 @@ class _EventReportScreenState extends State<EventReportScreen> {
         var cell = detailSheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
         cell.value = TextCellValue(headers[i]);
         cell.cellStyle = CellStyle(
-          bold: true,
+            bold: true,
             backgroundColorHex:  ExcelColor.fromHexString("FFCCCCCC")
 
         );
@@ -1295,10 +983,10 @@ class _EventReportScreenState extends State<EventReportScreen> {
           var cell = deptSheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
           cell.value = TextCellValue(headers[i]);
           cell.cellStyle = CellStyle(
-            bold: true,
-            backgroundColorHex:  ExcelColor.fromHexString("FFCCCCCC")
+              bold: true,
+              backgroundColorHex:  ExcelColor.fromHexString("FFCCCCCC")
 
-    );
+          );
         }
 
         // Filter students by department
@@ -1530,57 +1218,45 @@ class _EventReportScreenState extends State<EventReportScreen> {
           if (!isLoading && attendanceData.isNotEmpty)
             Padding(
               padding: EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: isExporting ? null : exportToExcel,
-                      icon: Icon(Icons.file_download),
-                      label: Text('Export Report'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        minimumSize: Size(0, 50),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: isFetchingFeedback
-                          ? null
-                          : () {
-                        if (showFeedback) {
-                          setState(() {
-                            showFeedback = false;
-                          });
-                        } else {
-                          fetchFeedbackData();
-                        }
-                      },
-                      icon: Icon(Icons.bar_chart),
-                      label: Text('Feedback'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                        minimumSize: Size(0, 50),
-                      ),
-                    ),
-                  ),
-                ],
+              child: ElevatedButton.icon(
+                onPressed: isExporting ? null : exportToExcel,
+                icon: Icon(Icons.file_download),
+                label: Text('Export Attendance Report'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  minimumSize: Size(double.infinity, 50),
+                ),
               ),
             ),
-
-// Update this part of the build method to handle the feedback view
+          // Current view
           Expanded(
-            child: isFetchingFeedback
-                ? Center(child: CircularProgressIndicator())
-                : showFeedback
-                ? _buildFeedbackView()
-                : _buildCurrentView(),
+            child: _buildCurrentView(),
           ),
         ],
       ),
+
+      // Loading overlay for export process
+      //     if (isExporting)
+      // Container(
+      //   color: Colors.black45,
+      //   child: Center(
+      //     child: Column(
+      //       mainAxisSize: MainAxisSize.min,
+      //       children: [
+      //         CircularProgressIndicator(),
+      //         SizedBox(height: 16),
+      //         Text(
+      //           'Generating Excel report...',
+      //           style: TextStyle(
+      //             color: Colors.white,
+      //             fontSize: 16,
+      //             fontWeight: FontWeight.bold,
+      //           ),
+      //         ),
+      //       ],
+      //     ),
+      //   ),
 
     );
   }
