@@ -20,6 +20,7 @@ class _FacultyProfileState extends State<FacultyProfile> with SingleTickerProvid
   String designation = 'Designation';
   String qualification = 'Qualification';
   String specialization = 'Specialization';
+  String profileUrl = '';
   bool isLoading = true;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -95,6 +96,7 @@ class _FacultyProfileState extends State<FacultyProfile> with SingleTickerProvid
       designation = data['designation'] ?? 'Designation';
       qualification = data['qualification'] ?? 'Qualification';
       specialization = data['specialization'] ?? 'Specialization';
+      profileUrl = data['profileUrl'] ?? '';
 
       setState(() {
         isLoading = false;
@@ -303,10 +305,16 @@ class _FacultyProfileState extends State<FacultyProfile> with SingleTickerProvid
                           child: Container(
                             height: 120,
                             width: 120,
-                            child: Image.asset(
+                            child: profileUrl==''||profileUrl.isEmpty?
+                            Image.asset(
                               'assets/images/profile.png',
                               fit: BoxFit.cover,
-                            ),
+                            )
+                                :
+                            Image.network(
+                              profileUrl,
+                              fit: BoxFit.cover,
+                            )
                           ),
                         ),
                       ),

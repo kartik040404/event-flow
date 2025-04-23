@@ -1,6 +1,7 @@
 import 'package:event_flow/admin/AdminEventDetails.dart';
 import 'package:event_flow/admin/AdminEventDetailsFilling.dart';
 import 'package:event_flow/admin/AdminEventFullDetails.dart';
+import 'package:event_flow/admin/AdminSelfEventsFullDetails.dart';
 import 'package:event_flow/faculty/FacultyEventDetailsFilling.dart';
 import 'package:event_flow/faculty/FacultyEventFullDetails.dart';
 import 'package:event_flow/student/StudentParticipated.dart';
@@ -27,7 +28,7 @@ class ProgramDetails {
   factory ProgramDetails.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return ProgramDetails(
-      programDetails: data['programDetails'] ?? '',
+      programDetails: data['title'] ?? '',
       date: data['startDate'] ?? '',
       time: data['startTime'] ?? '',
       id: doc.id,
@@ -85,6 +86,7 @@ class AdminEvent extends StatefulWidget {
   @override
   _AdminEventState createState() => _AdminEventState();
 }
+
 final FirebaseAuth _auth = FirebaseAuth.instance;
 User? user = _auth.currentUser;
 
@@ -93,6 +95,12 @@ class _AdminEventState extends State<AdminEvent> {
   late int faculty;
   late String emailID;
   SortOption _currentSortOption = SortOption.dateAscending;
+
+  // Blue theme colors
+  final Color primaryBlue = Color(0xFF2962FF);
+  final Color lightBlue = Color(0xFF82B1FF);
+  final Color darkBlue = Color(0xFF0039CB);
+  final Color accentBlue = Color(0xFF448AFF);
 
   void _sortPrograms(List<ProgramDetails> programs) {
     switch (_currentSortOption) {
@@ -128,9 +136,17 @@ class _AdminEventState extends State<AdminEvent> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
+        color: Colors.white,
         border: Border(
-          bottom: BorderSide(color: Colors.grey[300]!, width: 1),
+          bottom: BorderSide(color: lightBlue.withOpacity(0.3), width: 1),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 2,
+            offset: Offset(0, 1),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -138,7 +154,7 @@ class _AdminEventState extends State<AdminEvent> {
             'Sort by:',
             style: TextStyle(
               fontFamily: 'MainFont',
-              color: Colors.black54,
+              color: darkBlue,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -153,7 +169,14 @@ class _AdminEventState extends State<AdminEvent> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.grey[300]!),
+                  border: Border.all(color: lightBlue),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 4,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -162,13 +185,13 @@ class _AdminEventState extends State<AdminEvent> {
                       _getSortOptionText(),
                       style: TextStyle(
                         fontFamily: 'MainFont1',
-                        color: Colors.black87,
+                        color: darkBlue,
                       ),
                     ),
                     Spacer(),
                     Icon(
                       Icons.arrow_drop_down,
-                      color: Colors.black54,
+                      color: primaryBlue,
                     ),
                   ],
                 ),
@@ -183,15 +206,32 @@ class _AdminEventState extends State<AdminEvent> {
   void _showSortOptions() {
     showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
         return Container(
           padding: EdgeInsets.symmetric(vertical: 20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Colors.white, Colors.white],
+            ),
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: EdgeInsets.only(bottom: 15),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.only(bottom: 15),
                 child: Text(
@@ -200,10 +240,14 @@ class _AdminEventState extends State<AdminEvent> {
                     fontFamily: 'MainFont',
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
+                    color: darkBlue,
                   ),
                 ),
               ),
-              Divider(),
+              Divider(
+                color: lightBlue.withOpacity(0.3),
+                thickness: 1,
+              ),
               _buildSortOption(
                 title: 'Date: Oldest First',
                 icon: Icons.arrow_upward,
@@ -241,19 +285,19 @@ class _AdminEventState extends State<AdminEvent> {
     return ListTile(
       leading: Icon(
         icon,
-        color: isSelected ? Colors.blue : Colors.black54,
+        color: isSelected ? primaryBlue : Colors.grey,
         size: 20,
       ),
       title: Text(
         title,
         style: TextStyle(
           fontFamily: 'MainFont1',
-          color: isSelected ? Colors.blue : Colors.black87,
+          color: isSelected ? primaryBlue : Colors.black87,
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         ),
       ),
       trailing: isSelected
-          ? Icon(Icons.check_circle, color: Colors.blue)
+          ? Icon(Icons.check_circle, color: primaryBlue)
           : null,
       onTap: () {
         setState(() {
@@ -269,59 +313,84 @@ class _AdminEventState extends State<AdminEvent> {
     return Scaffold(
       body: SafeArea(
         child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Colors.white, Colors.white],
+              stops: [0.0, 0.3],
+            ),
+          ),
           child: DefaultTabController(
             length: 3, // Changed from 2 to 3 for the new tab
             child: Column(
               children: [
-                TabBar(
-                  labelColor: Colors.black,
-                  overlayColor: MaterialStateProperty.resolveWith((states) => Colors.transparent),
-                  indicatorColor: Colors.black,
-                  dividerColor: MaterialStateColor.resolveWith(
-                        (states) => Colors.black,
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
                   ),
-                  indicatorSize: TabBarIndicatorSize.tab,
-                  tabs: [
-                    Tab(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: Text(
-                          "Events",
-                          style: TextStyle(
-                            fontFamily: "MainFont",
-                            fontWeight: FontWeight.w600,
+                  child: TabBar(
+                    labelColor: primaryBlue,
+                    unselectedLabelColor: Colors.grey[600],
+                    overlayColor: MaterialStateProperty.resolveWith((states) => Colors.transparent),
+                    indicatorColor: primaryBlue,
+                    dividerColor: MaterialStateColor.resolveWith(
+                          (states) => lightBlue.withOpacity(0.3),
+                    ),
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    labelStyle: TextStyle(
+                      fontFamily: "MainFont",
+                      fontWeight: FontWeight.w600,
+                    ),
+                    tabs: [
+                      Tab(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          child: Text(
+                            "Events",
+                            style: TextStyle(
+                              fontFamily: "MainFont",
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    Tab(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: Text(
-                          textAlign: TextAlign.center,
-                          "Your Activities",
-                          style: TextStyle(
-                            fontFamily: "MainFont",
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12,
+                      Tab(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          child: Text(
+                            textAlign: TextAlign.center,
+                            "Your Activities",
+                            style: TextStyle(
+                              fontFamily: "MainFont",
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    // New Tab for Requests
-                    Tab(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: Text(
-                          "Requests",
-                          style: TextStyle(
-                            fontFamily: "MainFont",
-                            fontWeight: FontWeight.w600,
+                      // New Tab for Requests
+                      Tab(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          child: Text(
+                            "Requests",
+                            style: TextStyle(
+                              fontFamily: "MainFont",
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 _buildSortFilterSection(),
                 Expanded(
@@ -347,9 +416,10 @@ class _AdminEventState extends State<AdminEvent> {
         onPressed: ()=> Navigator.push(context, MaterialPageRoute(builder: (context) =>AdminEventDetailsFilling(),)),
         label: const Text(
           'Add Event',
-          style: TextStyle(fontFamily: 'MainFont', color: Colors.white),
+          style: TextStyle(fontFamily: 'MainFont', color: Colors.white, fontWeight: FontWeight.w600),
         ),
-        backgroundColor: Colors.black,
+        icon: Icon(Icons.add, color: Colors.white),
+        backgroundColor: primaryBlue,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(30),
         ),
@@ -366,7 +436,7 @@ class _AdminEventState extends State<AdminEvent> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(
             child: CircularProgressIndicator(
-              color: Colors.black,
+              color: primaryBlue,
               strokeWidth: 3,
             ),
           );
@@ -431,7 +501,7 @@ class _AdminEventState extends State<AdminEvent> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => AdminEventFullDetails(eventId: requestDetails.id,request: 1,),
+                      builder: (context) => AdminSelfEventFullDetails(eventId: requestDetails.id),
                     ),
                   );
                 },
@@ -554,7 +624,7 @@ class _AdminEventState extends State<AdminEvent> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(
             child: CircularProgressIndicator(
-              color: Colors.black,
+              color: primaryBlue,
               strokeWidth: 3,
             ),
           );
@@ -712,7 +782,7 @@ class _AdminEventState extends State<AdminEvent> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(
             child: CircularProgressIndicator(
-              color: Colors.black,
+              color: primaryBlue,
               strokeWidth: 3,
             ),
           );
@@ -901,7 +971,7 @@ class _AdminEventState extends State<AdminEvent> {
         final data = doc.data() as Map<String, dynamic>;
 
         return ProgramDetails(
-          programDetails: data['programDetails'] ?? '',
+          programDetails: data['title'] ?? '',
           date: data['startDate'] ?? '',
           time: data['startTime'] ?? '',
           id: doc.id,

@@ -1,5 +1,6 @@
 import 'package:event_flow/LoginScreen.dart';
 import 'package:event_flow/ImageUploaderApp.dart';
+import 'package:event_flow/ResetPassword.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
@@ -284,16 +285,16 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Seminar Hall Management',
-                              style: TextStyle(
-                                color: Color(0xFF1A73E8),
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-
-                            SizedBox(height: 30),
+                            // Text(
+                            //   'Seminar Hall Management',
+                            //   style: TextStyle(
+                            //     color: Color(0xFF1A73E8),
+                            //     fontSize: 20,
+                            //     fontWeight: FontWeight.bold,
+                            //   ),
+                            // ),
+                            //
+                            SizedBox(height: 10),
 
                             Form(
                               key: _formKey,
@@ -389,7 +390,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                     alignment: Alignment.centerRight,
                                     child: TextButton(
                                       onPressed: () {
-                                        // Implement forgot password
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(builder: (context) => ResetPassword()),
+                                        );
                                       },
                                       style: TextButton.styleFrom(
                                         foregroundColor: Color(0xFF1A73E8),

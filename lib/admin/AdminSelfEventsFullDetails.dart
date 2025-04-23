@@ -17,16 +17,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
-class FacultyEventFullDetails extends StatefulWidget {
+class AdminSelfEventFullDetails extends StatefulWidget {
   final String eventId;
 
-  FacultyEventFullDetails({required this.eventId});
+  AdminSelfEventFullDetails({required this.eventId});
 
   @override
-  _FacultyEventFullDetailsState createState() => _FacultyEventFullDetailsState();
+  _AdminSelfEventFullDetailsState createState() => _AdminSelfEventFullDetailsState();
 }
 
-class _FacultyEventFullDetailsState extends State<FacultyEventFullDetails> {
+class _AdminSelfEventFullDetailsState extends State<AdminSelfEventFullDetails> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   bool isLoading = true;
   Map<String, dynamic>? eventData;
@@ -60,7 +60,6 @@ class _FacultyEventFullDetailsState extends State<FacultyEventFullDetails> {
         setState(() {
           eventData = eventDoc.data() as Map<String, dynamic>;
           permissionStatus = eventData?['permission'] ?? 'pending';
-          _uploadedImageUrl=eventData?['posterUrl']??null;
           isLoading = false;
 
           // Set status color
@@ -70,7 +69,7 @@ class _FacultyEventFullDetailsState extends State<FacultyEventFullDetails> {
             statusColor = Colors.green;
           } else if (permissionStatus == 'rejected') {
             statusColor = Colors.red;
-          } 
+          }
         });
       } else {
         showToast('Event not found');
@@ -1514,7 +1513,7 @@ class _EventReportScreenState extends State<EventReportScreen> {
         var cell = detailSheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
         cell.value = TextCellValue(headers[i]);
         cell.cellStyle = CellStyle(
-          bold: true,
+            bold: true,
             backgroundColorHex:  ExcelColor.fromHexString("FFCCCCCC")
 
         );
@@ -1555,10 +1554,10 @@ class _EventReportScreenState extends State<EventReportScreen> {
           var cell = deptSheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
           cell.value = TextCellValue(headers[i]);
           cell.cellStyle = CellStyle(
-            bold: true,
-            backgroundColorHex:  ExcelColor.fromHexString("FFCCCCCC")
+              bold: true,
+              backgroundColorHex:  ExcelColor.fromHexString("FFCCCCCC")
 
-    );
+          );
         }
 
         // Filter students by department

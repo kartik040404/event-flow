@@ -23,7 +23,7 @@ class _StudentProfileState extends State<StudentProfile> with SingleTickerProvid
   String sem = 'Semester';
   String div = 'Division';
   String rollNo = 'Roll Number';
-
+String profileUrl='';
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
@@ -49,6 +49,7 @@ class _StudentProfileState extends State<StudentProfile> with SingleTickerProvid
     _animationController.dispose();
     super.dispose();
   }
+
 
   Future<void> logout() async {
     try {
@@ -98,7 +99,7 @@ class _StudentProfileState extends State<StudentProfile> with SingleTickerProvid
       sem = data['semester'] ?? 'Semester';
       div = data['division'] ?? 'Division';
       rollNo = data['rollNumber'] ?? 'Roll Number';
-
+      profileUrl=data['profileUrl'] ?? '';
       setState(() {
         isLoading = false;
       });
@@ -307,10 +308,18 @@ class _StudentProfileState extends State<StudentProfile> with SingleTickerProvid
                           child: Container(
                             height: 120,
                             width: 120,
-                            child: Image.asset(
+                            child:
+                            profileUrl==''||profileUrl.isEmpty?
+                            Image.asset(
                               'assets/images/profile.png',
                               fit: BoxFit.cover,
-                            ),
+                            )
+                                :
+                            Image.network(
+                              profileUrl,
+                              fit: BoxFit.cover,
+                            )
+
                           ),
                         ),
                       ),

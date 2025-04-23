@@ -19,7 +19,7 @@ class ProgramDetails {
   factory ProgramDetails.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return ProgramDetails(
-      programDetails: data['programDetails'] ?? '',
+      programDetails: data['title'] ?? '',
       date: data['startDate'] ?? '',
       time: data['startTime'] ?? '',
       id: doc.id,
@@ -31,7 +31,7 @@ Future<List<ProgramDetails>> fetchProgramDetails() async {
   try {
     QuerySnapshot querySnapshot =
     await FirebaseFirestore.instance.collection('events')
-    .where('permission', isEqualTo: 'approved')
+        .where('permission', isEqualTo: 'approved')
         .get();
 
     List<ProgramDetails> programList = querySnapshot.docs
@@ -66,6 +66,12 @@ class _StudentEventState extends State<StudentEvent> {
   late String emailID;
   SortOption _currentSortOption = SortOption.dateAscending;
 
+  // Define blue theme colors
+  final Color primaryBlue = Color(0xFF1A73E8);
+  final Color lightBlue = Color(0xFFE8F0FE);
+  final Color darkBlue = Color(0xFF0D47A1);
+  final Color accentBlue = Color(0xFF4285F4);
+
   void _sortPrograms(List<ProgramDetails> programs) {
     switch (_currentSortOption) {
       case SortOption.dateAscending:
@@ -98,11 +104,11 @@ class _StudentEventState extends State<StudentEvent> {
 
   Widget _buildSortFilterSection() {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        // color: Colors.grey[100],
+        color: lightBlue.withOpacity(0.5),
         border: Border(
-          bottom: BorderSide(color: Colors.grey[300]!, width: 1),
+          bottom: BorderSide(color: accentBlue.withOpacity(0.3), width: 1),
         ),
       ),
       child: Row(
@@ -111,22 +117,30 @@ class _StudentEventState extends State<StudentEvent> {
             'Sort by:',
             style: TextStyle(
               fontFamily: 'MainFont',
-              color: Colors.black54,
+              color: darkBlue,
               fontWeight: FontWeight.w500,
+              fontSize: 15,
             ),
           ),
-          SizedBox(width: 10),
+          SizedBox(width: 12),
           Expanded(
             child: InkWell(
               onTap: () {
                 _showSortOptions();
               },
               child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.grey[300]!),
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(color: accentBlue.withOpacity(0.4)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 4,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -135,13 +149,15 @@ class _StudentEventState extends State<StudentEvent> {
                       _getSortOptionText(),
                       style: TextStyle(
                         fontFamily: 'MainFont1',
-                        color: Colors.black87,
+                        color: darkBlue,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                     Spacer(),
                     Icon(
                       Icons.arrow_drop_down,
-                      color: Colors.black54,
+                      color: primaryBlue,
+                      size: 28,
                     ),
                   ],
                 ),
@@ -157,26 +173,44 @@ class _StudentEventState extends State<StudentEvent> {
     showModalBottomSheet(
       context: context,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
+      backgroundColor: Colors.white,
       builder: (context) {
         return Container(
-          padding: EdgeInsets.symmetric(vertical: 20),
+          padding: EdgeInsets.symmetric(vertical: 24, horizontal: 8),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Colors.white, lightBlue.withOpacity(0.3)],
+            ),
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
               Padding(
-                padding: const EdgeInsets.only(bottom: 15),
+                padding: const EdgeInsets.only(bottom: 18),
                 child: Text(
                   'Sort Events',
                   style: TextStyle(
                     fontFamily: 'MainFont',
-                    fontSize: 18,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
+                    color: darkBlue,
                   ),
                 ),
               ),
-              Divider(),
+              Divider(color: accentBlue.withOpacity(0.2), thickness: 1),
               _buildSortOption(
                 title: 'Date: Oldest First',
                 icon: Icons.arrow_upward,
@@ -212,21 +246,30 @@ class _StudentEventState extends State<StudentEvent> {
     bool isSelected = _currentSortOption == option;
 
     return ListTile(
-      leading: Icon(
-        icon,
-        color: isSelected ? Colors.blue : Colors.black54,
-        size: 20,
+      contentPadding: EdgeInsets.symmetric(horizontal: 24),
+      leading: Container(
+        padding: EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: isSelected ? primaryBlue.withOpacity(0.2) : lightBlue.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(
+          icon,
+          color: isSelected ? primaryBlue : accentBlue,
+          size: 20,
+        ),
       ),
       title: Text(
         title,
         style: TextStyle(
           fontFamily: 'MainFont1',
-          color: isSelected ? Colors.blue : Colors.black87,
+          color: isSelected ? primaryBlue : Colors.black87,
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          fontSize: 16,
         ),
       ),
       trailing: isSelected
-          ? Icon(Icons.check_circle, color: Colors.blue)
+          ? Icon(Icons.check_circle, color: primaryBlue)
           : null,
       onTap: () {
         setState(() {
@@ -240,63 +283,75 @@ class _StudentEventState extends State<StudentEvent> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Container(
-          // margin: EdgeInsets.only(top: 30),
           child: DefaultTabController(
             length: 2,
             child: Column(
               children: [
-                TabBar(
-                  labelColor: Colors.black,
-                  overlayColor: WidgetStateProperty.resolveWith((states) => Colors.transparent),
-                  indicatorColor: Colors.black,
-                  dividerColor: WidgetStateColor.resolveWith(
-                        (states) => Colors.black,
+                Container(
+                  padding: EdgeInsets.only(top: 12, bottom: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 6,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
                   ),
-                  indicatorSize: TabBarIndicatorSize.tab,
-                  // padding: EdgeInsets.all(4),
-                  // indicator: BoxDecoration(
-                  //   color: Colors.white,
-                  //   borderRadius: BorderRadius.circular(25),
-                  //   boxShadow: [
-                  //     BoxShadow(
-                  //       color: Colors.black.withOpacity(0.1),
-                  //       blurRadius: 4,
-                  //       offset: Offset(0, 2),
-                  //     ),
-                  //   ],
-                  // ),
-                  // labelColor: Colors.black,
-                  // unselectedLabelColor: Colors.black54,
-                  tabs: [
-                    Tab(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: Text(
-                          "Events",
-                          style: TextStyle(
-                            fontFamily: "MainFont",
-                            fontWeight: FontWeight.w600,
+                  child: TabBar(
+                    labelColor: primaryBlue,
+                    unselectedLabelColor: Colors.grey[600],
+                    overlayColor: WidgetStateProperty.resolveWith((states) => Colors.transparent),
+                    indicatorColor: primaryBlue,
+                    indicatorWeight: 3,
+                    dividerColor: Colors.transparent,
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    labelStyle: TextStyle(
+                      fontFamily: "MainFont",
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
+                    unselectedLabelStyle: TextStyle(
+                      fontFamily: "MainFont",
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
+                    tabs: [
+                      Tab(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.event, size: 16),
+                              SizedBox(width: 6),
+                              Text("Events"),
+                            ],
                           ),
                         ),
                       ),
-                    ),
-                    Tab(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: Text(
-                          "Your Activities",
-                          style: TextStyle(
-                            fontFamily: "MainFont",
-                            fontWeight: FontWeight.w600,
+                      Tab(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.person_outline, size: 16),
+                              SizedBox(width: 6),
+                              Text("Your Activities"),
+                            ],
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-                // SizedBox(height: 10),
                 _buildSortFilterSection(),
                 Expanded(
                   child: TabBarView(
@@ -316,12 +371,12 @@ class _StudentEventState extends State<StudentEvent> {
       ),
       // floatingActionButton: FloatingActionButton.extended(
       //   onPressed: () => {},
-      //   // onPressed: ()=> Navigator.push(context, MaterialPageRoute(builder: (context) => StudentEventsHistory(),)),
       //   label: const Text(
       //     'History',
-      //     style: TextStyle(fontFamily: 'MainFont', color: Colors.white),
+      //     style: TextStyle(fontFamily: 'MainFont', color: Colors.white, fontWeight: FontWeight.w600),
       //   ),
-      //   backgroundColor: Colors.black,
+      //   icon: Icon(Icons.history, color: Colors.white),
+      //   backgroundColor: primaryBlue,
       //   shape: RoundedRectangleBorder(
       //     borderRadius: BorderRadius.circular(30),
       //   ),
@@ -337,7 +392,7 @@ class _StudentEventState extends State<StudentEvent> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(
             child: CircularProgressIndicator(
-              color: Colors.black,
+              color: primaryBlue,
               strokeWidth: 3,
             ),
           );
@@ -366,14 +421,23 @@ class _StudentEventState extends State<StudentEvent> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.event_busy, size: 64, color: Colors.grey),
-                SizedBox(height: 16),
+                Icon(Icons.event_busy, size: 72, color: accentBlue.withOpacity(0.6)),
+                SizedBox(height: 20),
                 Text(
                   'No events found',
                   style: TextStyle(
                     fontFamily: "MainFont",
                     fontSize: 18,
-                    color: Colors.grey[700],
+                    color: darkBlue,
+                  ),
+                ),
+                SizedBox(height: 10),
+                Text(
+                  'Check back later for upcoming events',
+                  style: TextStyle(
+                    fontFamily: "MainFont1",
+                    fontSize: 14,
+                    color: Colors.grey[600],
                   ),
                 ),
               ],
@@ -399,24 +463,12 @@ class _StudentEventState extends State<StudentEvent> {
               child: InkWell(
                 borderRadius: BorderRadius.circular(12),
                 onTap: () {
-                  // if (!(futureEvents == fetchProgramDetails())) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => StudentEventDetails(eventId: programDetails.id),
-                      ),
-                    );
-                  // } else {
-                  //   Navigator.push(
-                  //     context,
-                  //     MaterialPageRoute(
-                  //       builder: (context) => StudentParticipated(
-                  //         eventId: programDetails.id,
-                  //         email: user!.email,
-                  //       ),
-                  //     ),
-                  //   );
-                  // }
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => StudentEventDetails(eventId: programDetails.id),
+                    ),
+                  );
                 },
                 child: Padding(
                   padding: const EdgeInsets.all(12.0),
@@ -499,6 +551,7 @@ class _StudentEventState extends State<StudentEvent> {
       },
     );
   }
+
   Widget _buildEventsList2(Future<List<ProgramDetails>> futureEvents) {
     return FutureBuilder<List<ProgramDetails>>(
       future: futureEvents,
@@ -506,7 +559,7 @@ class _StudentEventState extends State<StudentEvent> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(
             child: CircularProgressIndicator(
-              color: Colors.black,
+              color: primaryBlue,
               strokeWidth: 3,
             ),
           );
@@ -535,14 +588,23 @@ class _StudentEventState extends State<StudentEvent> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.event_busy, size: 64, color: Colors.grey),
-                SizedBox(height: 16),
+                Icon(Icons.event_busy, size: 72, color: accentBlue.withOpacity(0.6)),
+                SizedBox(height: 20),
                 Text(
-                  'No events found',
+                  'No participated events found',
                   style: TextStyle(
                     fontFamily: "MainFont",
                     fontSize: 18,
-                    color: Colors.grey[700],
+                    color: darkBlue,
+                  ),
+                ),
+                SizedBox(height: 10),
+                Text(
+                  'Join events to see them here',
+                  style: TextStyle(
+                    fontFamily: "MainFont1",
+                    fontSize: 14,
+                    color: Colors.grey[600],
                   ),
                 ),
               ],
@@ -568,25 +630,15 @@ class _StudentEventState extends State<StudentEvent> {
               child: InkWell(
                 borderRadius: BorderRadius.circular(12),
                 onTap: () {
-                  // if (!(futureEvents == fetchProgramDetails())) {
-                  //   Navigator.push(
-                  //     context,
-                  //     MaterialPageRoute(
-                  //       builder: (context) => StudentEventDetails(eventId: programDetails.id),
-                  //     ),
-                  //   );
-                  // } else {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => StudentParticipated(
-                          eventId: programDetails.id,
-                          email: user!.email,
-
-                        ),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => StudentParticipated(
+                        eventId: programDetails.id,
+                        email: user!.email,
                       ),
-                    );
-                  // }
+                    ),
+                  );
                 },
                 child: Padding(
                   padding: const EdgeInsets.all(12.0),
@@ -736,10 +788,10 @@ void main() {
   runApp(
     MaterialApp(
       theme: ThemeData(
-        primaryColor: Colors.black,
+        primaryColor: Color(0xFF1A73E8),
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.black,
-          primary: Colors.black,
+          seedColor: Color(0xFF1A73E8),
+          primary: Color(0xFF1A73E8),
         ),
       ),
       home: StudentEvent(),

@@ -62,7 +62,7 @@ class _FacultyHomeState extends State<FacultyHome> with SingleTickerProviderStat
 
     for (QueryDocumentSnapshot<Map<String, dynamic>> doc in querySnapshot.docs) {
       String date = doc['startDate'];
-      String eventName = doc['programDetails'];
+      String eventName = doc['title'];
       String time = doc['startTime'];
 
       if (mySelectedEvents[date] != null) {

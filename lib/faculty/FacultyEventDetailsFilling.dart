@@ -83,6 +83,7 @@ class _FacultyEventDetailsFillingState extends State<FacultyEventDetailsFilling>
 
   TextEditingController facultyNameController = TextEditingController();
   TextEditingController designationController = TextEditingController();
+  TextEditingController titleController = TextEditingController();
   TextEditingController departmentController = TextEditingController();
   TextEditingController phoneNoController = TextEditingController();
   TextEditingController programDetailsController = TextEditingController();
@@ -257,12 +258,6 @@ class _FacultyEventDetailsFillingState extends State<FacultyEventDetailsFilling>
     );
   }
 
-  void _copyUrlToClipboard() {
-    if (_uploadedImageUrl != null) {
-      Clipboard.setData(ClipboardData(text: _uploadedImageUrl!));
-      _showSuccessSnackBar('URL copied to clipboard');
-    }
-  }
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
@@ -459,11 +454,46 @@ class _FacultyEventDetailsFillingState extends State<FacultyEventDetailsFilling>
                 ),
               ),
 
+              //------------------------------------------------------Event Title------------------------------------------
+              Container(
+                margin: EdgeInsets.only(left: 10, top: 10),
+                child: Text(
+                  "5) Title :",
+                  style: TextStyle(fontFamily: "MainFont"),
+                ),
+              ),
+              SizedBox(
+                height: 10,
+              ),
+              Center(
+                child: SizedBox(
+                  width: 340,
+                  child: TextFormField(
+                    controller: titleController,
+                    decoration: InputDecoration(
+                        hintText: "Title",
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            borderSide: BorderSide(color: Colors.black)),
+                        focusedBorder: OutlineInputBorder(
+                            borderSide:
+                            BorderSide(color: Colors.black, width: 2),
+                            borderRadius: BorderRadius.circular(15)),
+                        errorStyle: TextStyle(fontFamily: "MainFont1")),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter the Title';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+              ),
               //------------------------------------------------------Details of the Programs-----------------------------------------
               Container(
                 margin: EdgeInsets.only(left: 10, top: 10),
                 child: Text(
-                  "5) Details of the Programs :",
+                  "6) Details of the Programs :",
                   style: TextStyle(fontFamily: "MainFont"),
                 ),
               ),
@@ -500,7 +530,7 @@ class _FacultyEventDetailsFillingState extends State<FacultyEventDetailsFilling>
               Container(
                 margin: EdgeInsets.only(left: 10, top: 10),
                 child: Text(
-                  "6) Hall Occupancy Dates :",
+                  "7) Hall Occupancy Dates :",
                   style: TextStyle(fontFamily: "MainFont"),
                 ),
               ),
@@ -649,7 +679,7 @@ class _FacultyEventDetailsFillingState extends State<FacultyEventDetailsFilling>
               Container(
                 margin: EdgeInsets.only(left: 10, top: 10),
                 child: Text(
-                  "7) Time :",
+                  "8) Time :",
                   style: TextStyle(fontFamily: "MainFont"),
                 ),
               ),
@@ -795,7 +825,7 @@ class _FacultyEventDetailsFillingState extends State<FacultyEventDetailsFilling>
               Container(
                 margin: EdgeInsets.only(left: 10, top: 10),
                 child: Text(
-                  "8) Name of the Co-ordinator :",
+                  "9) Name of the Co-ordinator :",
                   style: TextStyle(fontFamily: "MainFont"),
                 ),
               ),
@@ -832,7 +862,7 @@ class _FacultyEventDetailsFillingState extends State<FacultyEventDetailsFilling>
               Container(
                 margin: EdgeInsets.only(left: 10, top: 10),
                 child: Text(
-                  "9) Mobile No. of Co-ordinator :",
+                  "10) Mobile No. of Co-ordinator :",
                   style: TextStyle(fontFamily: "MainFont"),
                 ),
               ),
@@ -869,7 +899,7 @@ class _FacultyEventDetailsFillingState extends State<FacultyEventDetailsFilling>
               Container(
                 margin: EdgeInsets.only(left: 10, top: 10),
                 child: Text(
-                  "10) Name of the Chief Guest :",
+                  "11) Name of the Chief Guest :",
                   style: TextStyle(fontFamily: "MainFont"),
                 ),
               ),
@@ -908,7 +938,7 @@ class _FacultyEventDetailsFillingState extends State<FacultyEventDetailsFilling>
               Container(
                 margin: EdgeInsets.only(left: 10, top: 10),
                 child: Text(
-                  "11) Numbers of Chief Guest Expected :",
+                  "12) Numbers of Chief Guest Expected :",
                   style: TextStyle(fontFamily: "MainFont"),
                 ),
               ),
@@ -945,7 +975,7 @@ class _FacultyEventDetailsFillingState extends State<FacultyEventDetailsFilling>
               Container(
                 margin: EdgeInsets.only(left: 10, top: 10),
                 child: Text(
-                  "12) Numbers of Invitees :",
+                  "13) Numbers of Invitees :",
                   style: TextStyle(fontFamily: "MainFont"),
                 ),
               ),
@@ -982,7 +1012,7 @@ class _FacultyEventDetailsFillingState extends State<FacultyEventDetailsFilling>
               Container(
                 margin: EdgeInsets.only(left: 10, top: 10),
                 child: Text(
-                  "13) Other facility required: ",
+                  "14) Other facility required: ",
                   style: TextStyle(fontFamily: "MainFont"),
                 ),
               ),
@@ -1091,7 +1121,7 @@ class _FacultyEventDetailsFillingState extends State<FacultyEventDetailsFilling>
               Container(
                 margin: EdgeInsets.only(left: 10, top: 10),
                 child: Text(
-                  "14) Do you need feedback for this event : ",
+                  "15) Do you need feedback for this event : ",
                   style: TextStyle(fontFamily: "MainFont"),
                 ),
               ),
@@ -1203,45 +1233,6 @@ class _FacultyEventDetailsFillingState extends State<FacultyEventDetailsFilling>
                           style: TextStyle(color: Colors.red[800], fontSize: 14),
                         ),
                       ),
-
-                    // if (_uploadedImageUrl != null)
-                    //   Container(
-                    //     margin: EdgeInsets.only(top: 16),
-                    //     padding: EdgeInsets.all(12),
-                    //     decoration: BoxDecoration(
-                    //       color: isDarkMode
-                    //           ? Colors.indigo.withOpacity(0.2)
-                    //           : Colors.indigo.withOpacity(0.1),
-                    //       borderRadius: BorderRadius.circular(12),
-                    //       border: Border.all(
-                    //         color: isDarkMode
-                    //             ? Colors.indigo.withOpacity(0.3)
-                    //             : Colors.indigo.withOpacity(0.2),
-                    //       ),
-                    //     ),
-                    //     child: Column(
-                    //       crossAxisAlignment: CrossAxisAlignment.start,
-                    //       children: [
-                    //         Text(
-                    //           'Cloudinary URL:',
-                    //           style: TextStyle(
-                    //             color: Colors.indigo,
-                    //             fontWeight: FontWeight.bold,
-                    //           ),
-                    //         ),
-                    //         SizedBox(height: 4),
-                    //         Text(
-                    //           _uploadedImageUrl!,
-                    //           style: TextStyle(
-                    //             color: isDarkMode ? Colors.white70 : Colors.black87,
-                    //             fontSize: 12,
-                    //           ),
-                    //           maxLines: 2,
-                    //           overflow: TextOverflow.ellipsis,
-                    //         ),
-                    //       ],
-                    //     ),
-                    //   ),
 
                     SizedBox(height: 32),
 
@@ -1472,6 +1463,7 @@ class _FacultyEventDetailsFillingState extends State<FacultyEventDetailsFilling>
         'department': selectedDepartment,
         'facultyPhoneNo': phoneNoController.text,
         'programDetails': programDetailsController.text,
+        'title':titleController.text,
         'startDate': Startdate,
         'endDate': EndDate,
         'startTime': From,
@@ -1495,6 +1487,7 @@ class _FacultyEventDetailsFillingState extends State<FacultyEventDetailsFilling>
         'department': selectedDepartment,
         'facultyPhoneNo': phoneNoController.text,
         'programDetails': programDetailsController.text,
+        'title':titleController.text,
         'startDate': Startdate,
         'endDate': EndDate,
         'startTime': From,

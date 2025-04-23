@@ -63,7 +63,7 @@ class _AdminHomeState extends State<AdminHome> with SingleTickerProviderStateMix
 
     for (QueryDocumentSnapshot<Map<String, dynamic>> doc in querySnapshot.docs) {
       String date = doc['startDate'];
-      String eventName = doc['programDetails'];
+      String eventName = doc['title'];
       String time = doc['startTime'];
 
       if (mySelectedEvents[date] != null) {

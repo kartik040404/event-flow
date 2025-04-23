@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:photo_view/photo_view.dart';
 
 class StudentEventDetails extends StatefulWidget {
   final String eventId;
@@ -285,31 +286,13 @@ class _StudentEventDetailsState extends State<StudentEventDetails> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Container(
-                //   width: double.infinity,
-                //   height: 200,
-                //   decoration: BoxDecoration(
-                //     color: Colors.blue.shade100,
-                //     borderRadius: BorderRadius.only(
-                //       bottomLeft: Radius.circular(30),
-                //       bottomRight: Radius.circular(30),
-                //     ),
-                //   ),
-                //   child: Center(
-                //     child: Icon(
-                //       Icons.event,
-                //       size: 100,
-                //       color: Colors.blue.shade800,
-                //     ),
-                //   ),
-                // ),
                 Padding(
                   padding: const EdgeInsets.all(20.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        eventDetails['programDetails'] ?? 'No Title',
+                        eventDetails['title'] ?? 'No Title',
                         style: TextStyle(
                           fontFamily: 'MainFont',
                           fontSize: 28,
@@ -353,35 +336,8 @@ class _StudentEventDetailsState extends State<StudentEventDetails> {
                           iconColor: Colors.red.shade800,
                         ),
                       ],
-                      SizedBox(height: 25),
-                      Text(
-                        'Description',
-                        style: TextStyle(
-                          fontFamily: 'MainFont',
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      SizedBox(height: 10),
-                      Card(
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(15.0),
-                          child: Text(
-                            eventDetails['description'] ?? 'No description available',
-                            style: TextStyle(
-                              fontFamily: 'MainFont1',
-                              fontSize: 16,
-                              height: 1.5,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ),
-                      ),
+
+
                       if (eventDetails['additionalInfo'] != null) ...[
                         SizedBox(height: 25),
                         Text(
@@ -594,38 +550,61 @@ class _StudentEventDetailsState extends State<StudentEventDetails> {
     );
   }
   Widget _buildNetworkImageContainer() {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Image.network(
-          eventDetails?['posterUrl']!,
-          fit: BoxFit.cover,
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return Center(
-              child: CircularProgressIndicator(
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded /
-                    loadingProgress.expectedTotalBytes!
-                    : null,
-                color: Colors.white,
-              ),
-            );
-          },
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              color: Colors.grey[900],
-              child: Center(
-                child: Icon(
-                  Icons.error_outline,
-                  color: Colors.white,
-                  size: 60,
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => Scaffold(
+              backgroundColor: Colors.black,
+              body: GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Center(
+                  child: PhotoView(
+                    imageProvider: NetworkImage(eventDetails?['posterUrl']!),
+                    backgroundDecoration: BoxDecoration(color: Colors.black),
+                    minScale: PhotoViewComputedScale.contained,
+                    maxScale: PhotoViewComputedScale.covered * 2,
+                  ),
                 ),
               ),
-            );
-          },
-        ),
-      ],
+            ),
+          ),
+        );
+      },
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.network(
+            eventDetails?['posterUrl']!,
+            fit: BoxFit.cover,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded /
+                      loadingProgress.expectedTotalBytes!
+                      : null,
+                  color: Colors.white,
+                ),
+              );
+            },
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                color: Colors.grey[900],
+                child: Center(
+                  child: Icon(
+                    Icons.error_outline,
+                    color: Colors.white,
+                    size: 60,
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
   Widget _buildPlaceholderContainer(bool isDarkMode) {
